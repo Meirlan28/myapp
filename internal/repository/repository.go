@@ -1,4 +1,4 @@
-package main
+package repository
 
 import (
 	"encoding/json"
@@ -6,12 +6,18 @@ import (
 	"fmt"
 	"os"
 
+	"myapp/internal/user"
+
 	"github.com/google/uuid"
 )
 
 type UserRepository struct {
 	fileName string
-	users    []User
+	users    []user.User
+}
+
+func New(fileName string) *UserRepository {
+	return &UserRepository{fileName: fileName, users: []user.User{}}
 }
 
 func (ur *UserRepository) saveToFile() error {
@@ -26,11 +32,11 @@ func (ur *UserRepository) saveToFile() error {
 	return nil
 }
 
-func (ur *UserRepository) readFromFile() error {
+func (ur *UserRepository) Load() error {
 	data, err := os.ReadFile(ur.fileName)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			ur.users = []User{}
+			ur.users = []user.User{}
 			return nil
 		}
 
@@ -46,20 +52,20 @@ func (ur *UserRepository) readFromFile() error {
 	return nil
 }
 
-func (ur *UserRepository) getAll() []User {
+func (ur *UserRepository) GetAll() []user.User {
 	return ur.users
 }
 
-func (ur *UserRepository) findById(id uuid.UUID) (User, bool) {
+func (ur *UserRepository) FindByID(id uuid.UUID) (user.User, bool) {
 	for i := range ur.users {
 		if ur.users[i].Id == id {
 			return ur.users[i], true
 		}
 	}
-	return User{}, false
+	return user.User{}, false
 }
 
-func (ur *UserRepository) deleteById(id uuid.UUID) (bool, error) {
+func (ur *UserRepository) DeleteByID(id uuid.UUID) (bool, error) {
 	var deleted bool
 	for i := range ur.users {
 		if ur.users[i].Id == id {
@@ -75,7 +81,7 @@ func (ur *UserRepository) deleteById(id uuid.UUID) (bool, error) {
 	return deleted, nil
 }
 
-func (ur *UserRepository) update(id uuid.UUID, name string, age int) (bool, error) {
+func (ur *UserRepository) Update(id uuid.UUID, name string, age int) (bool, error) {
 	var updated bool
 	for i, u := range ur.users {
 		if u.Id == id {
@@ -95,13 +101,13 @@ func (ur *UserRepository) update(id uuid.UUID, name string, age int) (bool, erro
 	return updated, nil
 }
 
-func (ur *UserRepository) create(name string, age int) error {
-	user, err := NewUser(name, age)
+func (ur *UserRepository) Create(name string, age int) error {
+	u, err := user.NewUser(name, age)
 	if err != nil {
 		return err
 	}
 
-	ur.users = append(ur.users, user)
+	ur.users = append(ur.users, u)
 
 	err = ur.saveToFile()
 	if err != nil {

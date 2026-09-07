@@ -1,8 +1,7 @@
-package main
+package user
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/google/uuid"
 )
@@ -49,8 +48,4 @@ func (u *User) SetAge(age int) error {
 		return err
 	}
 	return nil
-}
-
-func (u User) Print() {
-	fmt.Printf("id: %s name: %s age: %d\n", u.Id, u.Name, u.Age)
 }

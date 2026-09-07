@@ -1,13 +1,24 @@
-package main
+package console
 
 import (
 	"fmt"
+
+	"myapp/internal/repository"
+	"myapp/internal/user"
 
 	"github.com/google/uuid"
 )
 
 type Console struct {
-	ur *UserRepository
+	ur *repository.UserRepository
+}
+
+func New(ur *repository.UserRepository) *Console {
+	return &Console{ur: ur}
+}
+
+func printUser(u user.User) {
+	fmt.Printf("id: %s name: %s age: %d\n", u.Id, u.Name, u.Age)
 }
 
 const defaultMenu = `
@@ -38,7 +49,7 @@ func (c Console) Start() {
 			fmt.Printf("Enter users's age: ")
 			fmt.Scan(&age)
 
-			err := c.ur.create(name, age)
+			err := c.ur.Create(name, age)
 			if err != nil {
 				fmt.Print(fmt.Errorf("Error: %w", err))
 				break
@@ -54,17 +65,17 @@ func (c Console) Start() {
 				fmt.Println("Not valid id")
 				continue
 			}
-			u, found := c.ur.findById(id)
+			u, found := c.ur.FindByID(id)
 			if found {
 				fmt.Printf("User found:\n")
-				u.Print()
+				printUser(u)
 			} else {
 				fmt.Printf("User not found\n")
 			}
 		case "3":
-			users := c.ur.getAll()
+			users := c.ur.GetAll()
 			for _, u := range users {
-				u.Print()
+				printUser(u)
 			}
 		case "4":
 			var id uuid.UUID
@@ -85,7 +96,7 @@ func (c Console) Start() {
 			fmt.Print("Enter new age: ")
 			fmt.Scan(&age)
 
-			updated, err := c.ur.update(id, name, age)
+			updated, err := c.ur.Update(id, name, age)
 			if err != nil {
 				fmt.Println(fmt.Errorf("Error: %w", err))
 				break
@@ -107,7 +118,7 @@ func (c Console) Start() {
 				break
 			}
 
-			deleted, err := c.ur.deleteById(id)
+			deleted, err := c.ur.DeleteByID(id)
 			if err != nil {
 				fmt.Println(fmt.Errorf("Error: %w", err))
 				break
