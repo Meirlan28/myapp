@@ -1,8 +1,7 @@
 package user
 
 import (
-	"errors"
-
+	"fmt"
 	"github.com/google/uuid"
 )
 
@@ -27,16 +26,12 @@ func NewUser(name string, age int) (User, error) {
 }
 
 func (u User) AgeCategory() (string, error) {
-	switch {
-	case u.Age >= 0 && u.Age < 18:
-		return "underage", nil
-	case u.Age >= 18 && u.Age < 64:
-		return "adult", nil
-	case u.Age >= 64 && u.Age <= 120:
-		return "senior", nil
-	default:
-		return "", errors.New("age must be between 0 and 120")
+	for c := range categories {
+		if categories[c].Contains(u.Age) {
+			return c, nil
+		}
 	}
+	return "", fmt.Errorf("Invalid age")
 }
 
 func (u *User) SetAge(age int) error {
