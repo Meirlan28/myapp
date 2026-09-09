@@ -12,8 +12,16 @@ func TestNewUser(t *testing.T) {
 		age     int
 		isError bool
 	}{
-		{"user_1", 10, false},
-		{"user_2", -1, true},
+		{"user_1", 0, false},
+		{"user_2", 10, false},
+		{"user_3", 17, false},
+		{"user_4", 18, false},
+		{"user_5", 30, false},
+		{"user_6", 63, false},
+		{"user_6", 64, false},
+		{"user_6", 100, false},
+		{"user_6", 120, false},
+		{"user_negative_age", -1, true},
 	}
 
 	for _, tt := range tests {

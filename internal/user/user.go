@@ -2,6 +2,7 @@ package user
 
 import (
 	"fmt"
+
 	"github.com/google/uuid"
 )
 
@@ -35,7 +36,7 @@ func (u User) AgeCategory() (string, error) {
 }
 
 func (u *User) SetAge(age int) error {
-	if age < categories[Underage].Min || categories[Underage].Max < age {
+	if age < categories[Underage].Min || categories[Senior].Max < age {
 		return fmt.Errorf("failed to set age: Invalid age")
 	}
 	u.Age = age
