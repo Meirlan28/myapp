@@ -1,7 +1,7 @@
 package user
 
-const Junior = "junior"
-const Middle = "middle"
+const Underage = "underage"
+const Adult = "adult"
 const Senior = "senior"
 
 type AgeRange struct {
@@ -9,15 +9,11 @@ type AgeRange struct {
 }
 
 var categories = map[string]AgeRange{
-	Junior: {0, 18},
-	Middle: {18, 64},
-	Senior: {64, 121},
+	Underage: {0, 18},
+	Adult:    {18, 64},
+	Senior:   {64, 121},
 }
 
 func (ar AgeRange) Contains(age int) bool {
-	if ar.Min <= age && age < ar.Max {
-		return true
-	} else {
-		return false
-	}
+	return ar.Min <= age && age < ar.Max
 }

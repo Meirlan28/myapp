@@ -35,12 +35,9 @@ func (u User) AgeCategory() (string, error) {
 }
 
 func (u *User) SetAge(age int) error {
-	oldAge := u.Age
-	u.Age = age
-	_, err := u.AgeCategory()
-	if err != nil {
-		u.Age = oldAge
-		return err
+	if age < categories[Underage].Min || categories[Underage].Max < age {
+		return fmt.Errorf("failed to set age: Invalid age")
 	}
+	u.Age = age
 	return nil
 }
