@@ -22,6 +22,7 @@ func TestNewUser(t *testing.T) {
 		{"user_6", 100, false},
 		{"user_6", 120, false},
 		{"user_negative_age", -1, true},
+		{"user_more_than_max", 121, true},
 	}
 
 	for _, tt := range tests {

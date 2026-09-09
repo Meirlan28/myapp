@@ -9,11 +9,11 @@ type AgeRange struct {
 }
 
 var categories = map[string]AgeRange{
-	Underage: {0, 18},
-	Adult:    {18, 64},
-	Senior:   {64, 121},
+	Underage: {0, 17},
+	Adult:    {18, 63},
+	Senior:   {64, 120},
 }
 
 func (ar AgeRange) Contains(age int) bool {
-	return ar.Min <= age && age < ar.Max
+	return ar.Min <= age && age <= ar.Max
 }
