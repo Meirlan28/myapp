@@ -6,9 +6,9 @@ import (
 )
 
 type Server struct {
-	mux *http.ServeMux
+	mux  *http.ServeMux
 	port string
-	ur *repository.UserRepository
+	ur   *repository.UserRepository
 }
 
 func New(ur *repository.UserRepository, port string) *Server {
@@ -20,6 +20,9 @@ func New(ur *repository.UserRepository, port string) *Server {
 }
 
 func (s *Server) Start() {
-	http.HandleFunc("GET /users", s.usersHandler)
-	http.ListenAndServe(s.port, s.mux)
+	s.mux.HandleFunc("GET /users", s.usersHandler)
+	err := http.ListenAndServe(s.port, s.mux)
+	if err != nil {
+		panic(err)
+	}
 }
