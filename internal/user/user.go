@@ -7,9 +7,9 @@ import (
 )
 
 type User struct {
-	Id   uuid.UUID
-	Name string
-	Age  int
+	Id   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
+	Age  int       `json:"age"`
 }
 
 func NewUser(name string, age int) (User, error) {

@@ -1,17 +1,16 @@
 package main
 
 import (
-	"myapp/internal/console"
+	"myapp/internal/api"
 	"myapp/internal/repository"
 )
 
-func main() {
-	userRepository := repository.New("data.json")
-	err := userRepository.Load()
-	if err != nil {
-		panic(err)
-	}
+const port = ":8080"
+const fileName = "data.json"
 
-	app := console.New(userRepository)
-	app.Start()
+func main() {
+	ur := repository.New(fileName)
+
+	server := api.New(ur, port)
+	server.Start()
 }
