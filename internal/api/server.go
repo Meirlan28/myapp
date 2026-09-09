@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"myapp/internal/repository"
 	"net/http"
 )
@@ -20,9 +21,12 @@ func New(ur *repository.UserRepository, port string) *Server {
 }
 
 func (s *Server) Start() {
-	s.mux.HandleFunc("GET /users", s.usersHandler)
+	s.mux.HandleFunc("GET /users", s.getUsersHandler)
+	s.mux.HandleFunc("GET /users/{id}", s.findUserHandler)
+	fmt.Printf("🚀  Application running on http://localhost%s", s.port)
 	err := http.ListenAndServe(s.port, s.mux)
 	if err != nil {
 		panic(err)
 	}
+
 }
