@@ -5,7 +5,7 @@ import (
 	"myapp/internal/repository"
 )
 
-const port = ":8080"
+const port = ":8081"
 const fileName = "data.json"
 
 func main() {

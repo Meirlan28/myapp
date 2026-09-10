@@ -100,7 +100,12 @@ func (s *Server) findUserHandler(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) createUserHandler(w http.ResponseWriter, r *http.Request) {
 	var userCreateRequest UserCreateRequest
-	json.NewDecoder(r.Body).Decode(&userCreateRequest)
+	err := json.NewDecoder(r.Body).Decode(&userCreateRequest)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(fmt.Errorf("Error: failed to parse json: %w", err))
+		return
+	}
 
 	if userCreateRequest.Name == nil {
 		w.WriteHeader(http.StatusBadRequest)
