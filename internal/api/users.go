@@ -103,7 +103,7 @@ func (s *Server) createUserHandler(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&userCreateRequest)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(fmt.Errorf("Error: failed to parse json: %w", err))
+		json.NewEncoder(w).Encode(fmt.Sprintf("Error: failed to parse json: %v", err))
 		return
 	}
 
@@ -137,6 +137,8 @@ func (s *Server) createUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) updateUserHandler(w http.ResponseWriter, r *http.Request) {
+	var u user.User
+
 	pathId := r.PathValue("id")
 	id, err := uuid.Parse(pathId)
 	if err != nil {
@@ -148,7 +150,19 @@ func (s *Server) updateUserHandler(w http.ResponseWriter, r *http.Request) {
 	var userUpdateRequest UserUpdateRequest
 	json.NewDecoder(r.Body).Decode(&userUpdateRequest)
 
-	u, err := s.ur.Update(id, userUpdateRequest.Name, userUpdateRequest.Age)
+	if userUpdateRequest.Name != nil {
+		u, err = s.ur.UpdateName(id, *userUpdateRequest.Name)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(fmt.Sprintf("Error: failed to update user: %v", pathId))
+		return
+	}
+
+	if userUpdateRequest.Age != nil {
+		u, err = s.ur.UpdateAge(id, *userUpdateRequest.Age)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(fmt.Sprintf("Error: failed to update user: %v", pathId))
+		return
+	}
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -184,8 +198,8 @@ type UserCreateRequest struct {
 }
 
 type UserUpdateRequest struct {
-	Name string
-	Age  int
+	Name *string
+	Age  *int
 }
 
 type UserPage struct {

@@ -116,24 +116,41 @@ func (ur *UserRepository) DeleteByID(id uuid.UUID) error {
 	return nil
 }
 
-func (ur *UserRepository) Update(id uuid.UUID, name string, age int) (user.User, error) {
-	var user user.User
+func (ur *UserRepository) UpdateAge(id uuid.UUID, age int) (user.User, error) {
+	var userUpdate user.User
 	for i, u := range ur.users {
 		if u.Id == id {
 			err := ur.users[i].SetAge(age)
 			if err != nil {
 				return u, err
 			}
-			ur.users[i].Name = name
-			user = ur.users[i]
+			userUpdate = ur.users[i]
+
+			err = ur.saveToFile()
+			if err != nil {
+				return user.User{}, err
+			}
+			return userUpdate, nil
 		}
 	}
+	return user.User{}, errors.New("User not found")
+}
 
-	err := ur.saveToFile()
-	if err != nil {
-		return user, err
+func (ur *UserRepository) UpdateName(id uuid.UUID, name string) (user.User, error) {
+	var userUpdate user.User
+	for i, u := range ur.users {
+		if u.Id == id {
+			ur.users[i].Name = name
+			userUpdate = ur.users[i]
+
+			err := ur.saveToFile()
+			if err != nil {
+				return user.User{}, err
+			}
+			return userUpdate, nil
+		}
 	}
-	return user, nil
+	return user.User{}, errors.New("User not found")
 }
 
 func (ur *UserRepository) Create(name string, age int) (user.User, error) {
