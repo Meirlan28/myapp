@@ -152,17 +152,22 @@ func (s *Server) updateUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	if userUpdateRequest.Name != nil {
 		u, err := s.ur.UpdateName(id, *userUpdateRequest.Name)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(fmt.Sprintf("Error: failed to update user: %v", err))
+			return
+		}
 		userUpdate = u
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(fmt.Sprintf("Error: failed to update user: %v", err))
-		return
 	}
 
 	if userUpdateRequest.Age != nil {
 		u, err := s.ur.UpdateAge(id, *userUpdateRequest.Age)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(fmt.Sprintf("Error: failed to update user: %v", err))
+			return
+		}
 		userUpdate = u
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(fmt.Sprintf("Error: failed to update user: %v", err))
 		return
 	}
 
