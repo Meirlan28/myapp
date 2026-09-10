@@ -52,67 +52,76 @@ func (ur *UserRepository) Load() error {
 	return nil
 }
 
+func (ur *UserRepository) GetAllFiltered(min_age int, max_age int) []user.User {
+	var filteredUsers []user.User
+	for _, u := range ur.users {
+		if min_age <= u.Age && u.Age <= max_age {
+			filteredUsers = append(filteredUsers, u)
+		}
+	}
+
+	return filteredUsers
+}
+
 func (ur *UserRepository) GetAll() []user.User {
 	return ur.users
 }
 
-func (ur *UserRepository) FindByID(id uuid.UUID) (user.User, bool) {
+func (ur *UserRepository) FindByID(id uuid.UUID) (user.User, error) {
 	for i := range ur.users {
 		if ur.users[i].Id == id {
-			return ur.users[i], true
+			return ur.users[i], nil
 		}
 	}
-	return user.User{}, false
+	return user.User{}, errors.New("User not found")
 }
 
-func (ur *UserRepository) DeleteByID(id uuid.UUID) (bool, error) {
-	var deleted bool
+func (ur *UserRepository) DeleteByID(id uuid.UUID) error {
 	for i := range ur.users {
 		if ur.users[i].Id == id {
 			ur.users = append(ur.users[:i], ur.users[i+1:]...)
-			deleted = true
 			break
 		}
 	}
 	err := ur.saveToFile()
 	if err != nil {
-		return deleted, err
+		return err
 	}
-	return deleted, nil
+	return nil
 }
 
-func (ur *UserRepository) Update(id uuid.UUID, name string, age int) (bool, error) {
-	var updated bool
+func (ur *UserRepository) Update(id uuid.UUID, name string, age int) (user.User, error) {
+	var user user.User
 	for i, u := range ur.users {
 		if u.Id == id {
 			err := ur.users[i].SetAge(age)
 			if err != nil {
-				return false, err
+				return u, err
 			}
 			ur.users[i].Name = name
-			updated = true
+			user = ur.users[i]
 		}
 	}
 
 	err := ur.saveToFile()
 	if err != nil {
-		return updated, err
+		return user, err
 	}
-	return updated, nil
+	return user, nil
 }
 
-func (ur *UserRepository) Create(name string, age int) error {
+func (ur *UserRepository) Create(name string, age int) (user.User, error) {
 	u, err := user.NewUser(name, age)
 	if err != nil {
-		return err
+		return user.User{}, err
 	}
 
 	ur.users = append(ur.users, u)
 
 	err = ur.saveToFile()
 	if err != nil {
-		return err
+		return user.User{}, err
 	}
 
-	return nil
+	return u, nil
 }

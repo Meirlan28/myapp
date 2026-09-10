@@ -49,12 +49,12 @@ func (c Console) Start() {
 			fmt.Printf("Enter users's age: ")
 			fmt.Scan(&age)
 
-			err := c.ur.Create(name, age)
+			user, err := c.ur.Create(name, age)
 			if err != nil {
 				fmt.Print(fmt.Errorf("Error: %w", err))
 				break
 			}
-			fmt.Printf("User created sexsexfully\n")
+			fmt.Printf("User created sexsexfully: %v\n", user)
 		case "2":
 			fmt.Print("Enter id of the user: ")
 			var id uuid.UUID
@@ -65,12 +65,12 @@ func (c Console) Start() {
 				fmt.Println("Not valid id")
 				continue
 			}
-			u, found := c.ur.FindByID(id)
-			if found {
-				fmt.Printf("User found:\n")
-				printUser(u)
+			u, err := c.ur.FindByID(id)
+			if err != nil {
+				fmt.Println(err)
 			} else {
-				fmt.Printf("User not found\n")
+				fmt.Println("User found:")
+				fmt.Print(u)
 			}
 		case "3":
 			users := c.ur.GetAll()
@@ -96,17 +96,13 @@ func (c Console) Start() {
 			fmt.Print("Enter new age: ")
 			fmt.Scan(&age)
 
-			updated, err := c.ur.Update(id, name, age)
+			user, err := c.ur.Update(id, name, age)
 			if err != nil {
 				fmt.Println(fmt.Errorf("Error: %w", err))
 				break
 			}
 
-			if updated {
-				fmt.Printf("user updated \n")
-			} else {
-				fmt.Printf("user with id: %s not found\n", id)
-			}
+			fmt.Printf("User updated: %v\n", user)
 		case "5":
 			var id uuid.UUID
 			var input string
@@ -118,16 +114,13 @@ func (c Console) Start() {
 				break
 			}
 
-			deleted, err := c.ur.DeleteByID(id)
+			err = c.ur.DeleteByID(id)
 			if err != nil {
 				fmt.Println(fmt.Errorf("Error: %w", err))
 				break
 			}
-			if deleted {
-				fmt.Printf("User deleted sexsexfully\n")
-			} else {
-				fmt.Printf("User not found\n")
-			}
+			fmt.Printf("User deleted sexsexfully\n")
+
 		case "exit":
 			return
 		default:

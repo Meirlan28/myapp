@@ -4,6 +4,9 @@ const Underage = "underage"
 const Adult = "adult"
 const Senior = "senior"
 
+const MinAge = 0
+const MaxAge = 120
+
 type AgeRange struct {
 	Min, Max int
 }
