@@ -11,6 +11,9 @@ import (
 	"github.com/google/uuid"
 )
 
+const MIN_LIMIT = 1
+const MAX_LIMIT = 100
+
 type UserRepository struct {
 	fileName string
 	users    []user.User
@@ -52,15 +55,38 @@ func (ur *UserRepository) Load() error {
 	return nil
 }
 
-func (ur *UserRepository) GetAllFiltered(min_age int, max_age int) []user.User {
+func (ur *UserRepository) GetAllFiltered(min_age int, max_age int, limit int, offset int) ([]user.User, error) {
 	var filteredUsers []user.User
+	if min_age < user.MinAge || user.MaxAge < max_age {
+		return nil, fmt.Errorf("invalid min_age or max_age")
+	}
+
+	if limit < MIN_LIMIT || MAX_LIMIT < limit {
+		return nil, fmt.Errorf("invalid limit")
+	}
+
+	if offset < 0 {
+		return nil, fmt.Errorf("offset must be positive")
+	}
+
+	limit_index := 0
+	offset_index := 0
 	for _, u := range ur.users {
+		if limit_index >= limit {
+			break
+		}
+		if offset_index < offset {
+			offset_index++
+			continue
+		}
 		if min_age <= u.Age && u.Age <= max_age {
 			filteredUsers = append(filteredUsers, u)
+			limit_index++
+			offset_index++
 		}
 	}
 
-	return filteredUsers
+	return filteredUsers, nil
 }
 
 func (ur *UserRepository) GetAll() []user.User {
