@@ -137,7 +137,7 @@ func (s *Server) createUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) updateUserHandler(w http.ResponseWriter, r *http.Request) {
-	var u user.User
+	var userUpdate user.User
 
 	pathId := r.PathValue("id")
 	id, err := uuid.Parse(pathId)
@@ -151,27 +151,30 @@ func (s *Server) updateUserHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewDecoder(r.Body).Decode(&userUpdateRequest)
 
 	if userUpdateRequest.Name != nil {
-		u, err = s.ur.UpdateName(id, *userUpdateRequest.Name)
+		u, err := s.ur.UpdateName(id, *userUpdateRequest.Name)
+		userUpdate = u
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(fmt.Sprintf("Error: failed to update user: %v", pathId))
+		json.NewEncoder(w).Encode(fmt.Sprintf("Error: failed to update user: %v", err))
 		return
 	}
 
 	if userUpdateRequest.Age != nil {
-		u, err = s.ur.UpdateAge(id, *userUpdateRequest.Age)
+		u, err := s.ur.UpdateAge(id, *userUpdateRequest.Age)
+		userUpdate = u
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(fmt.Sprintf("Error: failed to update user: %v", pathId))
+		json.NewEncoder(w).Encode(fmt.Sprintf("Error: failed to update user: %v", err))
 		return
 	}
 
+	userUpdate, err = s.ur.FindByID(id)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(fmt.Sprintf("Error: %v", err))
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode("Error: user not found")
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(u)
+	json.NewEncoder(w).Encode(userUpdate)
 }
 
 func (s *Server) deleteUserHandler(w http.ResponseWriter, r *http.Request) {
