@@ -118,25 +118,25 @@ func (s *Server) createUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	if userCreateRequest.Name == nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(repository.ValidationError)
+		json.NewEncoder(w).Encode(ErrorResponse{repository.ValidationError.Error()})
 		return
 	}
 
 	if len(*userCreateRequest.Name) < 2 {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(repository.ValidationError)
+		json.NewEncoder(w).Encode(ErrorResponse{repository.ValidationError.Error()})
 		return
 	}
 
 	if userCreateRequest.Age == nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(repository.ValidationError)
+		json.NewEncoder(w).Encode(ErrorResponse{repository.ValidationError.Error()})
 		return
 	}
 
 	if *userCreateRequest.Age < user.MinAge || user.MaxAge < *userCreateRequest.Age {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(repository.ValidationError)
+		json.NewEncoder(w).Encode(ErrorResponse{repository.ValidationError.Error()})
 		return
 	}
 
@@ -172,13 +172,13 @@ func (s *Server) updateUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	if userUpdateRequest.Name != nil && len(*userUpdateRequest.Name) < 2 {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(repository.ValidationError)
+		json.NewEncoder(w).Encode(ErrorResponse{repository.ValidationError.Error()})
 		return
 	}
 
 	if userUpdateRequest.Age != nil && (*userUpdateRequest.Age < user.MinAge || user.MaxAge < *userUpdateRequest.Age) {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(repository.ValidationError)
+		json.NewEncoder(w).Encode(ErrorResponse{repository.ValidationError.Error()})
 		return
 	}
 
