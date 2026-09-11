@@ -3,6 +3,7 @@ package repository
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 
 	"myapp/internal/user"
@@ -179,12 +180,16 @@ func (ur *UserRepository) CountByAge(min_age int, max_age int) int {
 	return count
 }
 
-var UserNotFound = errors.New("User not found")
+var ServerError = errors.New("internal server error")
 
-var InvalidAge = errors.New("age is invalid")
+var ClientError = errors.New("bad request")
 
-var JsonParsingError = errors.New("failed to parse to json")
+var UserNotFound = fmt.Errorf("%w: user not found", ClientError)
 
-var FileError = errors.New("file error")
+var InvalidAge = fmt.Errorf("%w: invalid age", ClientError)
 
-var ValidationError = errors.New("validation error")
+var JsonParsingError = fmt.Errorf("%w: failed to parse to json", ClientError)
+
+var FileError = fmt.Errorf("%w: file error", ServerError)
+
+var ValidationError = fmt.Errorf("%w: validation error", ClientError)

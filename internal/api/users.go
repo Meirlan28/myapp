@@ -21,8 +21,7 @@ func (s *Server) getUsersHandler(w http.ResponseWriter, r *http.Request) {
 		if min_age_query == "" {
 			min_age = user.MinAge
 		} else {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
+			SendError(w, err)
 			return
 		}
 	}
@@ -33,8 +32,7 @@ func (s *Server) getUsersHandler(w http.ResponseWriter, r *http.Request) {
 		if max_age_query == "" {
 			max_age = user.MaxAge
 		} else {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
+			SendError(w, err)
 			return
 		}
 	}
@@ -45,8 +43,7 @@ func (s *Server) getUsersHandler(w http.ResponseWriter, r *http.Request) {
 		if limit_query == "" {
 			limit = DEFAULT_LIMIT
 		} else {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
+			SendError(w, err)
 			return
 		}
 	}
@@ -56,16 +53,14 @@ func (s *Server) getUsersHandler(w http.ResponseWriter, r *http.Request) {
 		if offset_query == "" {
 			offset = DEFAULT_OFFSET
 		} else {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
+			SendError(w, err)
 			return
 		}
 	}
 
 	users, err := s.ur.GetAllFiltered(min_age, max_age, limit, offset)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
+		SendError(w, err)
 		return
 	}
 	count := s.ur.CountByAge(min_age, max_age)
@@ -89,15 +84,13 @@ func (s *Server) findUserHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(pathId)
 
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
+		SendError(w, err)
 		return
 	}
 
 	user, err := s.ur.FindByID(id)
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
+		SendError(w, err)
 		return
 	}
 
@@ -111,39 +104,33 @@ func (s *Server) createUserHandler(w http.ResponseWriter, r *http.Request) {
 	var userCreateRequest UserCreateRequest
 	err := json.NewDecoder(r.Body).Decode(&userCreateRequest)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
+		SendError(w, err)
 		return
 	}
 
 	if userCreateRequest.Name == nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(ErrorResponse{repository.ValidationError.Error()})
+		SendError(w, err)
 		return
 	}
 
 	if len(*userCreateRequest.Name) < 2 {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(ErrorResponse{repository.ValidationError.Error()})
+		SendError(w, err)
 		return
 	}
 
 	if userCreateRequest.Age == nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(ErrorResponse{repository.ValidationError.Error()})
+		SendError(w, err)
 		return
 	}
 
 	if *userCreateRequest.Age < user.MinAge || user.MaxAge < *userCreateRequest.Age {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(ErrorResponse{repository.ValidationError.Error()})
+		SendError(w, err)
 		return
 	}
 
 	u, err := s.ur.Create(*userCreateRequest.Name, *userCreateRequest.Age)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
+		SendError(w, err)
 		return
 	}
 
@@ -157,36 +144,31 @@ func (s *Server) updateUserHandler(w http.ResponseWriter, r *http.Request) {
 	pathId := r.PathValue("id")
 	id, err := uuid.Parse(pathId)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
+		SendError(w, err)
 		return
 	}
 
 	var userUpdateRequest UserUpdateRequest
 	err = json.NewDecoder(r.Body).Decode(&userUpdateRequest)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
+		SendError(w, err)
 		return
 	}
 
 	if userUpdateRequest.Name != nil && len(*userUpdateRequest.Name) < 2 {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(ErrorResponse{repository.ValidationError.Error()})
+		SendError(w, err)
 		return
 	}
 
 	if userUpdateRequest.Age != nil && (*userUpdateRequest.Age < user.MinAge || user.MaxAge < *userUpdateRequest.Age) {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(ErrorResponse{repository.ValidationError.Error()})
+		SendError(w, err)
 		return
 	}
 
 	if userUpdateRequest.Name != nil {
 		u, err := s.ur.UpdateName(id, *userUpdateRequest.Name)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
+			SendError(w, err)
 			return
 		}
 		userUpdate = u
@@ -195,8 +177,7 @@ func (s *Server) updateUserHandler(w http.ResponseWriter, r *http.Request) {
 	if userUpdateRequest.Age != nil {
 		u, err := s.ur.UpdateAge(id, *userUpdateRequest.Age)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
+			SendError(w, err)
 			return
 		}
 		userUpdate = u
@@ -204,8 +185,7 @@ func (s *Server) updateUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	userUpdate, err = s.ur.FindByID(id)
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
+		SendError(w, err)
 		return
 	}
 
@@ -217,23 +197,41 @@ func (s *Server) deleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	pathId := r.PathValue("id")
 	id, err := uuid.Parse(pathId)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
+		SendError(w, err)
 		return
 	}
 
 	err = s.ur.DeleteByID(id)
 	if err != nil {
 		if errors.Is(repository.UserNotFound, err) {
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
+			SendError(w, err)
 			return
 		}
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
+		SendError(w, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func SendError(w http.ResponseWriter, err error) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var statusCode int
+
+	switch {
+	case errors.Is(err, repository.ServerError):
+		statusCode = http.StatusInternalServerError
+
+	case errors.Is(err, repository.ClientError):
+		statusCode = http.StatusBadRequest
+
+	default:
+		statusCode = http.StatusInternalServerError
+	}
+
+	w.WriteHeader(statusCode)
+
+	json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
 }
 
 type UserCreateRequest struct {
