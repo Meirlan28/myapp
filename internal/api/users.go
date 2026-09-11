@@ -66,8 +66,15 @@ func (s *Server) getUsersHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(fmt.Sprintf("Error: %v", err))
 		return
 	}
+	count := s.ur.CountByAge(min_age, max_age)
 
-	userPage := UserPage{users, len(users), limit, offset}
+	var userPage UserPage
+
+	if users == nil {
+		userPage = UserPage{[]user.User{}, count, limit, offset}
+	} else {
+		userPage = UserPage{users, count, limit, offset}
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

@@ -168,3 +168,14 @@ func (ur *UserRepository) Create(name string, age int) (user.User, error) {
 
 	return u, nil
 }
+
+func (ur *UserRepository) CountByAge(min_age int, max_age int) int {
+	count := 0
+	for _, u := range ur.users {
+		if min_age <= u.Age && u.Age <= max_age {
+			count++
+		}
+	}
+
+	return count
+}
