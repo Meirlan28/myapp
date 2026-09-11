@@ -156,13 +156,13 @@ func (s *Server) updateUserHandler(w http.ResponseWriter, r *http.Request) {
 	var userUpdateRequest UserUpdateRequest
 	json.NewDecoder(r.Body).Decode(&userUpdateRequest)
 
-	if len(*userUpdateRequest.Name) < 2 {
+	if userUpdateRequest.Name != nil && len(*userUpdateRequest.Name) < 2 {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode("Error: validation error: name must be at least 2 symbols")
 		return
 	}
 
-	if *userUpdateRequest.Age < user.MinAge || user.MaxAge < *userUpdateRequest.Age {
+	if userUpdateRequest.Age != nil && (*userUpdateRequest.Age < user.MinAge || user.MaxAge < *userUpdateRequest.Age) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode("Error: validation error: age must be between 0 and 120")
 		return
