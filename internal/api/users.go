@@ -125,6 +125,12 @@ func (s *Server) createUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if *userCreateRequest.Age < user.MinAge || user.MaxAge < *userCreateRequest.Age {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode("Error: validation error: age must be between 0 and 120")
+		return
+	}
+
 	u, err := s.ur.Create(*userCreateRequest.Name, *userCreateRequest.Age)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -147,12 +153,20 @@ func (s *Server) updateUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	oldUser, err := s.ur.FindByID(id)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode("Error: user not found")
+		return
+	}
+
 	var userUpdateRequest UserUpdateRequest
 	json.NewDecoder(r.Body).Decode(&userUpdateRequest)
 
 	if userUpdateRequest.Name != nil {
 		u, err := s.ur.UpdateName(id, *userUpdateRequest.Name)
 		if err != nil {
+			s.ur.UpdateName(id, oldUser.Name)
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(fmt.Sprintf("Error: failed to update user: %v", err))
 			return
@@ -163,12 +177,13 @@ func (s *Server) updateUserHandler(w http.ResponseWriter, r *http.Request) {
 	if userUpdateRequest.Age != nil {
 		u, err := s.ur.UpdateAge(id, *userUpdateRequest.Age)
 		if err != nil {
+			s.ur.UpdateName(id, oldUser.Name)
+			s.ur.UpdateAge(id, oldUser.Age)
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(fmt.Sprintf("Error: failed to update user: %v", err))
 			return
 		}
 		userUpdate = u
-		return
 	}
 
 	userUpdate, err = s.ur.FindByID(id)
