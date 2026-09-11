@@ -2,7 +2,8 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
+	"myapp/internal/repository"
 	"myapp/internal/user"
 	"net/http"
 	"strconv"
@@ -21,10 +22,11 @@ func (s *Server) getUsersHandler(w http.ResponseWriter, r *http.Request) {
 			min_age = user.MinAge
 		} else {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(fmt.Sprintf("Error: invalid age: %v", err))
+			json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
 			return
 		}
 	}
+
 	max_age_query := r.URL.Query().Get("max_age")
 	max_age, err := strconv.Atoi(max_age_query)
 	if err != nil {
@@ -32,7 +34,7 @@ func (s *Server) getUsersHandler(w http.ResponseWriter, r *http.Request) {
 			max_age = user.MaxAge
 		} else {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(fmt.Sprintf("Error: invalid age: %v", err))
+			json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
 			return
 		}
 	}
@@ -44,7 +46,7 @@ func (s *Server) getUsersHandler(w http.ResponseWriter, r *http.Request) {
 			limit = DEFAULT_LIMIT
 		} else {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(fmt.Sprintf("Error: invalid limit: %v", err))
+			json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
 			return
 		}
 	}
@@ -55,7 +57,7 @@ func (s *Server) getUsersHandler(w http.ResponseWriter, r *http.Request) {
 			offset = DEFAULT_OFFSET
 		} else {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(fmt.Sprintf("Error: invalid offset: %v", err))
+			json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
 			return
 		}
 	}
@@ -63,7 +65,7 @@ func (s *Server) getUsersHandler(w http.ResponseWriter, r *http.Request) {
 	users, err := s.ur.GetAllFiltered(min_age, max_age, limit, offset)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(fmt.Sprintf("Error: %v", err))
+		json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
 		return
 	}
 	count := s.ur.CountByAge(min_age, max_age)
@@ -88,14 +90,14 @@ func (s *Server) findUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(fmt.Sprintf("Error: %s is not valid uuid", pathId))
+		json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
 		return
 	}
 
 	user, err := s.ur.FindByID(id)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode("Error: user not found")
+		json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
 		return
 	}
 
@@ -110,38 +112,38 @@ func (s *Server) createUserHandler(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&userCreateRequest)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(fmt.Sprintf("Error: failed to parse json: %v", err))
+		json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
 		return
 	}
 
 	if userCreateRequest.Name == nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode("Error: validation error: name must be specified")
+		json.NewEncoder(w).Encode(repository.ValidationError)
 		return
 	}
 
 	if len(*userCreateRequest.Name) < 2 {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode("Error: validation error: name must be at least 2 symbols")
+		json.NewEncoder(w).Encode(repository.ValidationError)
 		return
 	}
 
 	if userCreateRequest.Age == nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode("Error: validation error: age must be specified")
+		json.NewEncoder(w).Encode(repository.ValidationError)
 		return
 	}
 
 	if *userCreateRequest.Age < user.MinAge || user.MaxAge < *userCreateRequest.Age {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode("Error: validation error: age must be between 0 and 120")
+		json.NewEncoder(w).Encode(repository.ValidationError)
 		return
 	}
 
 	u, err := s.ur.Create(*userCreateRequest.Name, *userCreateRequest.Age)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(fmt.Sprintf("Error: %v", err))
+		json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
 		return
 	}
 
@@ -156,7 +158,7 @@ func (s *Server) updateUserHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(pathId)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(fmt.Sprintf("Error: %s is not valid uuid", pathId))
+		json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
 		return
 	}
 
@@ -164,19 +166,19 @@ func (s *Server) updateUserHandler(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&userUpdateRequest)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(fmt.Sprintf("Error: failed to parse json: %v", err))
+		json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
 		return
 	}
 
 	if userUpdateRequest.Name != nil && len(*userUpdateRequest.Name) < 2 {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode("Error: validation error: name must be at least 2 symbols")
+		json.NewEncoder(w).Encode(repository.ValidationError)
 		return
 	}
 
 	if userUpdateRequest.Age != nil && (*userUpdateRequest.Age < user.MinAge || user.MaxAge < *userUpdateRequest.Age) {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode("Error: validation error: age must be between 0 and 120")
+		json.NewEncoder(w).Encode(repository.ValidationError)
 		return
 	}
 
@@ -184,7 +186,7 @@ func (s *Server) updateUserHandler(w http.ResponseWriter, r *http.Request) {
 		u, err := s.ur.UpdateName(id, *userUpdateRequest.Name)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(fmt.Sprintf("Error: failed to update user: %v", err))
+			json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
 			return
 		}
 		userUpdate = u
@@ -194,7 +196,7 @@ func (s *Server) updateUserHandler(w http.ResponseWriter, r *http.Request) {
 		u, err := s.ur.UpdateAge(id, *userUpdateRequest.Age)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(fmt.Sprintf("Error: failed to update user: %v", err))
+			json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
 			return
 		}
 		userUpdate = u
@@ -203,7 +205,7 @@ func (s *Server) updateUserHandler(w http.ResponseWriter, r *http.Request) {
 	userUpdate, err = s.ur.FindByID(id)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode("Error: user not found")
+		json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
 		return
 	}
 
@@ -216,14 +218,19 @@ func (s *Server) deleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(pathId)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(fmt.Sprintf("Error: %s is not valid uuid", pathId))
+		json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
 		return
 	}
 
 	err = s.ur.DeleteByID(id)
 	if err != nil {
+		if errors.Is(repository.UserNotFound, err) {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
+			return
+		}
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(fmt.Sprintf("Error: %v", err))
+		json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -244,4 +251,8 @@ type UserPage struct {
 	Total  int         `json:"total"`
 	Limit  int         `json:"limit"`
 	Offset int         `json:"offset"`
+}
+
+type ErrorResponse struct {
+	Error string `json:"error"`
 }

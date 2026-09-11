@@ -3,7 +3,6 @@ package repository
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 
 	"myapp/internal/user"
@@ -26,11 +25,11 @@ func New(fileName string) *UserRepository {
 func (ur *UserRepository) saveToFile() error {
 	data, err := json.MarshalIndent(ur.users, "", "   ")
 	if err != nil {
-		return err
+		return JsonParsingError
 	}
 	err = os.WriteFile(ur.fileName, data, 0o600)
 	if err != nil {
-		return err
+		return FileError
 	}
 	return nil
 }
@@ -43,14 +42,14 @@ func (ur *UserRepository) Load() error {
 			return nil
 		}
 
-		return fmt.Errorf("read %s: %w", ur.fileName, err)
+		return FileError
 	}
 	err = json.Unmarshal(data, &ur.users)
 	if err != nil {
 		if len(data) == 0 {
 			return nil
 		}
-		return fmt.Errorf("invalid JSON in %s: %w", ur.fileName, err)
+		return JsonParsingError
 	}
 	return nil
 }
@@ -58,15 +57,15 @@ func (ur *UserRepository) Load() error {
 func (ur *UserRepository) GetAllFiltered(min_age int, max_age int, limit int, offset int) ([]user.User, error) {
 	var filteredUsers []user.User
 	if min_age < user.MinAge || user.MaxAge < max_age {
-		return nil, fmt.Errorf("invalid min_age or max_age")
+		return nil, ValidationError
 	}
 
 	if limit < MIN_LIMIT || MAX_LIMIT < limit {
-		return nil, fmt.Errorf("invalid limit")
+		return nil, ValidationError
 	}
 
 	if offset < 0 {
-		return nil, fmt.Errorf("offset must be positive")
+		return nil, ValidationError
 	}
 
 	limit_index := 0
@@ -99,21 +98,21 @@ func (ur *UserRepository) FindByID(id uuid.UUID) (user.User, error) {
 			return ur.users[i], nil
 		}
 	}
-	return user.User{}, errors.New("User not found")
+	return user.User{}, UserNotFound
 }
 
 func (ur *UserRepository) DeleteByID(id uuid.UUID) error {
 	for i := range ur.users {
 		if ur.users[i].Id == id {
 			ur.users = append(ur.users[:i], ur.users[i+1:]...)
-			break
+			err := ur.saveToFile()
+			if err != nil {
+				return FileError
+			}
+			return nil
 		}
 	}
-	err := ur.saveToFile()
-	if err != nil {
-		return err
-	}
-	return nil
+	return UserNotFound
 }
 
 func (ur *UserRepository) UpdateAge(id uuid.UUID, age int) (user.User, error) {
@@ -128,12 +127,12 @@ func (ur *UserRepository) UpdateAge(id uuid.UUID, age int) (user.User, error) {
 
 			err = ur.saveToFile()
 			if err != nil {
-				return user.User{}, err
+				return user.User{}, FileError
 			}
 			return userUpdate, nil
 		}
 	}
-	return user.User{}, errors.New("User not found")
+	return user.User{}, UserNotFound
 }
 
 func (ur *UserRepository) UpdateName(id uuid.UUID, name string) (user.User, error) {
@@ -145,25 +144,25 @@ func (ur *UserRepository) UpdateName(id uuid.UUID, name string) (user.User, erro
 
 			err := ur.saveToFile()
 			if err != nil {
-				return user.User{}, err
+				return user.User{}, FileError
 			}
 			return userUpdate, nil
 		}
 	}
-	return user.User{}, errors.New("User not found")
+	return user.User{}, UserNotFound
 }
 
 func (ur *UserRepository) Create(name string, age int) (user.User, error) {
 	u, err := user.NewUser(name, age)
 	if err != nil {
-		return user.User{}, err
+		return user.User{}, FileError
 	}
 
 	ur.users = append(ur.users, u)
 
 	err = ur.saveToFile()
 	if err != nil {
-		return user.User{}, err
+		return user.User{}, FileError
 	}
 
 	return u, nil
@@ -179,3 +178,13 @@ func (ur *UserRepository) CountByAge(min_age int, max_age int) int {
 
 	return count
 }
+
+var UserNotFound = errors.New("User not found")
+
+var InvalidAge = errors.New("age is invalid")
+
+var JsonParsingError = errors.New("failed to parse to json")
+
+var FileError = errors.New("file error")
+
+var ValidationError = errors.New("validation error")
