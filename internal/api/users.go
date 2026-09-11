@@ -109,22 +109,22 @@ func (s *Server) createUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if userCreateRequest.Name == nil {
-		SendError(w, err)
+		SendError(w, repository.ValidationError)
 		return
 	}
 
 	if len(*userCreateRequest.Name) < 2 {
-		SendError(w, err)
+		SendError(w, repository.ValidationError)
 		return
 	}
 
 	if userCreateRequest.Age == nil {
-		SendError(w, err)
+		SendError(w, repository.ValidationError)
 		return
 	}
 
 	if *userCreateRequest.Age < user.MinAge || user.MaxAge < *userCreateRequest.Age {
-		SendError(w, err)
+		SendError(w, repository.ValidationError)
 		return
 	}
 
@@ -156,12 +156,12 @@ func (s *Server) updateUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if userUpdateRequest.Name != nil && len(*userUpdateRequest.Name) < 2 {
-		SendError(w, err)
+		SendError(w, repository.ValidationError)
 		return
 	}
 
 	if userUpdateRequest.Age != nil && (*userUpdateRequest.Age < user.MinAge || user.MaxAge < *userUpdateRequest.Age) {
-		SendError(w, err)
+		SendError(w, repository.ValidationError)
 		return
 	}
 
@@ -203,11 +203,7 @@ func (s *Server) deleteUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = s.ur.DeleteByID(id)
 	if err != nil {
-		if errors.Is(repository.UserNotFound, err) {
-			SendError(w, err)
-			return
-		}
-		SendError(w, err)
+		SendError(w, repository.ValidationError)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
