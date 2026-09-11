@@ -154,7 +154,12 @@ func (s *Server) updateUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var userUpdateRequest UserUpdateRequest
-	json.NewDecoder(r.Body).Decode(&userUpdateRequest)
+	err = json.NewDecoder(r.Body).Decode(&userUpdateRequest)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(fmt.Sprintf("Error: failed to parse json: %v", err))
+		return
+	}
 
 	if userUpdateRequest.Name != nil && len(*userUpdateRequest.Name) < 2 {
 		w.WriteHeader(http.StatusBadRequest)
