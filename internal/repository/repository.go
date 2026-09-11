@@ -198,4 +198,4 @@ var ValidationError = fmt.Errorf("%w: validation error", ClientError)
 
 var InvalidUUID = fmt.Errorf("%w: invalid uuid", ClientError)
 
-var InvalidBodyInRequest = fmt.Errorf("%w: invalid body in request")
+var InvalidBodyInRequest = fmt.Errorf("%w: invalid body in request", ClientError)
