@@ -21,7 +21,7 @@ func (s *Server) getUsersHandler(w http.ResponseWriter, r *http.Request) {
 		if min_age_query == "" {
 			min_age = user.MinAge
 		} else {
-			SendError(w, err)
+			SendError(w, repository.InvalidQueryParameter)
 			return
 		}
 	}
@@ -32,7 +32,7 @@ func (s *Server) getUsersHandler(w http.ResponseWriter, r *http.Request) {
 		if max_age_query == "" {
 			max_age = user.MaxAge
 		} else {
-			SendError(w, err)
+			SendError(w, repository.InvalidQueryParameter)
 			return
 		}
 	}
@@ -43,7 +43,7 @@ func (s *Server) getUsersHandler(w http.ResponseWriter, r *http.Request) {
 		if limit_query == "" {
 			limit = DEFAULT_LIMIT
 		} else {
-			SendError(w, err)
+			SendError(w, repository.InvalidQueryParameter)
 			return
 		}
 	}
@@ -53,7 +53,7 @@ func (s *Server) getUsersHandler(w http.ResponseWriter, r *http.Request) {
 		if offset_query == "" {
 			offset = DEFAULT_OFFSET
 		} else {
-			SendError(w, err)
+			SendError(w, repository.InvalidQueryParameter)
 			return
 		}
 	}
@@ -84,7 +84,7 @@ func (s *Server) findUserHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(pathId)
 
 	if err != nil {
-		SendError(w, err)
+		SendError(w, repository.InvalidUUID)
 		return
 	}
 
@@ -104,7 +104,7 @@ func (s *Server) createUserHandler(w http.ResponseWriter, r *http.Request) {
 	var userCreateRequest UserCreateRequest
 	err := json.NewDecoder(r.Body).Decode(&userCreateRequest)
 	if err != nil {
-		SendError(w, err)
+		SendError(w, repository.InvalidBodyInRequest)
 		return
 	}
 
@@ -151,7 +151,7 @@ func (s *Server) updateUserHandler(w http.ResponseWriter, r *http.Request) {
 	var userUpdateRequest UserUpdateRequest
 	err = json.NewDecoder(r.Body).Decode(&userUpdateRequest)
 	if err != nil {
-		SendError(w, err)
+		SendError(w, repository.InvalidBodyInRequest)
 		return
 	}
 
@@ -197,13 +197,13 @@ func (s *Server) deleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	pathId := r.PathValue("id")
 	id, err := uuid.Parse(pathId)
 	if err != nil {
-		SendError(w, err)
+		SendError(w, repository.InvalidUUID)
 		return
 	}
 
 	err = s.ur.DeleteByID(id)
 	if err != nil {
-		SendError(w, repository.ValidationError)
+		SendError(w, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

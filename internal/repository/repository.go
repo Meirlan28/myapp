@@ -182,14 +182,20 @@ func (ur *UserRepository) CountByAge(min_age int, max_age int) int {
 
 var ServerError = errors.New("internal server error")
 
+var FileError = fmt.Errorf("%w: file error", ServerError)
+
 var ClientError = errors.New("bad request")
 
 var UserNotFound = fmt.Errorf("%w: user not found", ClientError)
 
 var InvalidAge = fmt.Errorf("%w: invalid age", ClientError)
 
-var JsonParsingError = fmt.Errorf("%w: failed to parse to json", ClientError)
+var JsonParsingError = fmt.Errorf("%w: failed to parse to json", ServerError)
 
-var FileError = fmt.Errorf("%w: file error", ServerError)
+var InvalidQueryParameter = fmt.Errorf("%w: invalid query parameter", ClientError)
 
 var ValidationError = fmt.Errorf("%w: validation error", ClientError)
+
+var InvalidUUID = fmt.Errorf("%w: invalid uuid", ClientError)
+
+var InvalidBodyInRequest = fmt.Errorf("%w: invalid body in request")
