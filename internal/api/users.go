@@ -244,23 +244,28 @@ func SendError(w http.ResponseWriter, err error) {
 
 	var statusCode int
 
-	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
-
 	switch {
 	case errors.Is(err, repository.ServerError):
 		statusCode = http.StatusInternalServerError
+		w.WriteHeader(statusCode)
+		json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
 
 	case errors.Is(err, repository.ClientError):
 		switch {
 		case errors.Is(repository.UserNotFound, err):
 			statusCode = http.StatusNotFound
+			w.WriteHeader(statusCode)
+			json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
 		default:
 			statusCode = http.StatusBadRequest
+			w.WriteHeader(statusCode)
+			json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
 		}
 
 	default:
 		statusCode = http.StatusInternalServerError
+		w.WriteHeader(statusCode)
+		json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
 	}
 }
 
