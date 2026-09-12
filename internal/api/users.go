@@ -3,10 +3,13 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"myapp/internal/repository"
 	"myapp/internal/user"
 	"net/http"
 	"strconv"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 )
@@ -58,6 +61,11 @@ func (s *Server) getUsersHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	s.logger.Info("GetAllFiltered",
+		"min_age", min_age,
+		"max_age", max_age,
+		"limit", limit,
+		"offset", offset)
 	users, err := s.ur.GetAllFiltered(min_age, max_age, limit, offset)
 	if err != nil {
 		SendError(w, err)
@@ -73,10 +81,7 @@ func (s *Server) getUsersHandler(w http.ResponseWriter, r *http.Request) {
 		userPage = UserPage{users, count, limit, offset}
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-	json.NewEncoder(w).Encode(userPage)
+	SendResponse(w, userPage, http.StatusOK)
 }
 
 func (s *Server) findUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -94,26 +99,41 @@ func (s *Server) findUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-	json.NewEncoder(w).Encode(user)
+	SendResponse(w, user, http.StatusOK)
 }
 
 func (s *Server) createUserHandler(w http.ResponseWriter, r *http.Request) {
 	var userCreateRequest UserCreateRequest
-	err := json.NewDecoder(r.Body).Decode(&userCreateRequest)
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	err := decoder.Decode(&userCreateRequest)
 	if err != nil {
+		s.logger.Info("failed to parsed body",
+			"body", userCreateRequest, "error", err)
 		SendError(w, repository.InvalidBodyInRequest)
 		return
 	}
+
+	var extra any
+	err = decoder.Decode(&extra)
+	if !errors.Is(err, io.EOF) {
+		s.logger.Info(
+			"request body contains extra data",
+			"error", err,
+		)
+
+		SendError(w, repository.InvalidBodyInRequest)
+		return
+	}
+
+	*userCreateRequest.Name = strings.TrimSpace(*userCreateRequest.Name)
 
 	if userCreateRequest.Name == nil {
 		SendError(w, repository.ValidationError)
 		return
 	}
 
-	if len(*userCreateRequest.Name) < 2 {
+	if utf8.RuneCountInString(*userCreateRequest.Name) < 2 {
 		SendError(w, repository.ValidationError)
 		return
 	}
@@ -128,14 +148,13 @@ func (s *Server) createUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u, err := s.ur.Create(*userCreateRequest.Name, *userCreateRequest.Age)
+	user, err := s.ur.Create(*userCreateRequest.Name, *userCreateRequest.Age)
 	if err != nil {
 		SendError(w, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(u)
+	SendResponse(w, user, http.StatusCreated)
 }
 
 func (s *Server) updateUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -144,9 +163,14 @@ func (s *Server) updateUserHandler(w http.ResponseWriter, r *http.Request) {
 	pathId := r.PathValue("id")
 	id, err := uuid.Parse(pathId)
 	if err != nil {
-		SendError(w, err)
+		s.logger.Info("failed to parse id",
+			"id", id,
+			"error", err)
+		SendError(w, repository.InvalidUUID)
 		return
 	}
+	s.logger.Info("id parsed",
+		"id", id)
 
 	var userUpdateRequest UserUpdateRequest
 	err = json.NewDecoder(r.Body).Decode(&userUpdateRequest)
@@ -189,8 +213,7 @@ func (s *Server) updateUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(userUpdate)
+	SendResponse(w, userUpdate, http.StatusOK)
 }
 
 func (s *Server) deleteUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -219,15 +242,27 @@ func SendError(w http.ResponseWriter, err error) {
 		statusCode = http.StatusInternalServerError
 
 	case errors.Is(err, repository.ClientError):
-		statusCode = http.StatusBadRequest
+		switch {
+		case errors.Is(repository.UserNotFound, err):
+			statusCode = http.StatusNotFound
+		default:
+			statusCode = http.StatusBadRequest
+		}
+
+		w.WriteHeader(statusCode)
+		json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
 
 	default:
 		statusCode = http.StatusInternalServerError
 	}
+}
+
+func SendResponse(w http.ResponseWriter, response any, statusCode int) {
+	w.Header().Set("Content-Type", "application/json")
 
 	w.WriteHeader(statusCode)
 
-	json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
+	json.NewEncoder(w).Encode(response)
 }
 
 type UserCreateRequest struct {
