@@ -126,12 +126,12 @@ func (s *Server) createUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	*userCreateRequest.Name = strings.TrimSpace(*userCreateRequest.Name)
-
 	if userCreateRequest.Name == nil {
 		SendError(w, repository.ValidationError)
 		return
 	}
+
+	*userCreateRequest.Name = strings.TrimSpace(*userCreateRequest.Name)
 
 	if utf8.RuneCountInString(*userCreateRequest.Name) < 2 {
 		SendError(w, repository.ValidationError)
@@ -179,7 +179,14 @@ func (s *Server) updateUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if userUpdateRequest.Name != nil && len(*userUpdateRequest.Name) < 2 {
+	if userUpdateRequest.Name == nil {
+		SendError(w, repository.ValidationError)
+		return
+	}
+
+	*userUpdateRequest.Name = strings.TrimSpace(*userUpdateRequest.Name)
+
+	if utf8.RuneCountInString(*userUpdateRequest.Name) < 2 {
 		SendError(w, repository.ValidationError)
 		return
 	}
@@ -237,6 +244,9 @@ func SendError(w http.ResponseWriter, err error) {
 
 	var statusCode int
 
+	w.WriteHeader(statusCode)
+	json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
+
 	switch {
 	case errors.Is(err, repository.ServerError):
 		statusCode = http.StatusInternalServerError
@@ -248,9 +258,6 @@ func SendError(w http.ResponseWriter, err error) {
 		default:
 			statusCode = http.StatusBadRequest
 		}
-
-		w.WriteHeader(statusCode)
-		json.NewEncoder(w).Encode(ErrorResponse{err.Error()})
 
 	default:
 		statusCode = http.StatusInternalServerError

@@ -72,6 +72,12 @@ func (ur *UserRepository) GetAllFiltered(min_age int, max_age int, limit int, of
 		return nil, ValidationError
 	}
 
+	if min_age > max_age {
+		ur.logger.Info("validation error for max_age",
+			"max_age", max_age, "min_age", min_age)
+		return nil, ValidationError
+	}
+
 	ur.logger.Info("validation finished",
 		"max_age", max_age, "min_age", min_age)
 
@@ -167,7 +173,7 @@ func (ur *UserRepository) UpdateName(id uuid.UUID, name string) (user.User, erro
 
 			err := ur.saveToFile()
 			if err != nil {
-				ur.users[i].SetAge(preUpdatedUser.Age)
+				ur.users[i].Name = preUpdatedUser.Name
 				return user.User{}, FileError
 			}
 			return userUpdate, nil
