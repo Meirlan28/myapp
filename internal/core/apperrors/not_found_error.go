@@ -12,6 +12,6 @@ func (e *NotFoundError) Error() string { return e.Message }
 func (e *NotFoundError) Unwrap() error { return e.Err }
 func (e *NotFoundError) GetCode() int  { return e.Code }
 
-func NewNotFoundError(err error) *InternalServerError {
-	return &InternalServerError{Code: http.StatusNotFound, Message: "Not Found Error", Err: err}
+func NewNotFoundError(err error) *NotFoundError {
+	return &NotFoundError{Code: http.StatusNotFound, Message: "Not Found Error", Err: err}
 }
