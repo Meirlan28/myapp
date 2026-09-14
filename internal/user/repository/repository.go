@@ -142,13 +142,12 @@ func (ur *UserRepository) DeleteByID(id uuid.UUID) apperrors.AppError {
 
 func (ur *UserRepository) UpdateAge(id uuid.UUID, age int) (user.User, apperrors.AppError) {
 	var userUpdated user.User
-	var appErr apperrors.AppError
 	for i, u := range ur.users {
 		if u.Id == id {
 			preUpdatedUser := ur.users[i]
 			err := ur.users[i].SetAge(age)
 			if err != nil {
-				return u, appErr
+				return u, apperrors.NewBadRequestError(InvalidAgeError)
 			}
 			userUpdated = ur.users[i]
 
