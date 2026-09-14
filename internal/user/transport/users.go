@@ -84,7 +84,11 @@ func (uh *UserHandler) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 		uh.SendError(w, appErr)
 		return
 	}
-	count := uh.Us.CountByAge(minAge, maxAge)
+	count, appErr := uh.Us.CountByAge(minAge, maxAge)
+	if appErr != nil {
+		uh.SendError(w, appErr)
+		return
+	}
 
 	var userPage UserPage
 
@@ -174,7 +178,6 @@ func (uh *UserHandler) CreateUserHandler(w http.ResponseWriter, r *http.Request)
 
 func (uh *UserHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 	var appErr apperrors.AppError
-	var userUpdate user.User
 
 	pathId := r.PathValue("id")
 	id, err := uuid.Parse(pathId)
@@ -227,7 +230,7 @@ func (uh *UserHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	uh.SendResponse(w, userUpdate, http.StatusOK)
+	uh.SendResponse(w, u, http.StatusOK)
 }
 
 func (uh *UserHandler) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {

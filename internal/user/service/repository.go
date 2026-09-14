@@ -1,4 +1,4 @@
-package repository
+package service
 
 import (
 	"myapp/internal/core/apperrors"
@@ -13,5 +13,5 @@ type Repository interface {
 	Create(name string, age int) (user.User, apperrors.AppError)
 	Update(id uuid.UUID, name string, age int) (user.User, apperrors.AppError)
 	DeleteByID(id uuid.UUID) apperrors.AppError
-	CountByAge(minAge int, MaxAge int) int
+	CountByAge(minAge int, MaxAge int) (int, apperrors.AppError)
 }

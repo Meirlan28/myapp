@@ -4,17 +4,16 @@ import (
 	"log/slog"
 	"myapp/internal/core/apperrors"
 	"myapp/internal/core/domains/user"
-	"myapp/internal/user/repository"
 
 	"github.com/google/uuid"
 )
 
 type UserService struct {
-	Ur     repository.Repository
+	Ur     Repository
 	logger *slog.Logger
 }
 
-func New(ur repository.Repository, logger *slog.Logger) *UserService {
+func New(ur Repository, logger *slog.Logger) *UserService {
 	return &UserService{ur, logger}
 }
 
@@ -38,6 +37,6 @@ func (us *UserService) Update(id uuid.UUID, name string, age int) (user.User, ap
 	return us.Ur.Update(id, name, age)
 }
 
-func (us *UserService) CountByAge(minAge int, MaxAge int) int {
+func (us *UserService) CountByAge(minAge int, MaxAge int) (int, apperrors.AppError) {
 	return us.Ur.CountByAge(minAge, MaxAge)
 }

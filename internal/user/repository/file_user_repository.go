@@ -145,6 +145,7 @@ func (ur *FileUserRepository) Update(id uuid.UUID, name string, age int) (user.U
 			err := ur.users[i].SetAge(age)
 			if err != nil {
 				ur.users[i].Name = preUpdatedUser.Name
+				_ = ur.users[i].SetAge(preUpdatedUser.Age)
 				return user.User{}, apperrors.NewBadRequestError(InvalidAgeError)
 			}
 			userUpdate = ur.users[i]
