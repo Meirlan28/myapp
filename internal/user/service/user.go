@@ -10,40 +10,32 @@ import (
 )
 
 type UserService struct {
-	Ur     *repository.UserRepository
+	Ur     repository.Repository
 	logger *slog.Logger
 }
 
-func New(ur *repository.UserRepository, logger *slog.Logger) *UserService {
+func New(ur repository.Repository, logger *slog.Logger) *UserService {
 	return &UserService{ur, logger}
 }
 
-func (us *UserService) CreateUser(name string, age int) (user.User, apperrors.AppError) {
+func (us *UserService) Create(name string, age int) (user.User, apperrors.AppError) {
 	return us.Ur.Create(name, age)
 }
 
-func (us *UserService) UpdateUser(id uuid.UUID, age int) (user.User, apperrors.AppError) {
-	return us.Ur.UpdateAge(id, age)
-}
-
-func (us *UserService) DeleteUser(id uuid.UUID) apperrors.AppError {
+func (us *UserService) Delete(id uuid.UUID) apperrors.AppError {
 	return us.Ur.DeleteByID(id)
 }
 
-func (us *UserService) GetUser(id uuid.UUID) (user.User, apperrors.AppError) {
+func (us *UserService) FindById(id uuid.UUID) (user.User, apperrors.AppError) {
 	return us.Ur.FindByID(id)
 }
 
-func (us *UserService) GetUsers(minAge int, maxAge int, limit int, offset int) ([]user.User, apperrors.AppError) {
+func (us *UserService) FindAll(minAge int, maxAge int, limit int, offset int) ([]user.User, apperrors.AppError) {
 	return us.Ur.FindAll(minAge, maxAge, limit, offset)
 }
 
-func (us *UserService) UpdateAge(id uuid.UUID, age int) (user.User, apperrors.AppError) {
-	return us.Ur.UpdateAge(id, age)
-}
-
-func (us *UserService) UpdateName(id uuid.UUID, name string) (user.User, apperrors.AppError) {
-	return us.Ur.UpdateName(id, name)
+func (us *UserService) Update(id uuid.UUID, name string, age int) (user.User, apperrors.AppError) {
+	return us.Ur.Update(id, name, age)
 }
 
 func (us *UserService) CountByAge(minAge int, MaxAge int) int {
