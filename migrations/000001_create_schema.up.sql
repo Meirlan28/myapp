@@ -1,0 +1,2 @@
+-- up
+CREATE SCHEMA IF NOT EXISTS myapp;

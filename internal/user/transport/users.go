@@ -12,8 +12,6 @@ import (
 	"strconv"
 	"strings"
 	"unicode/utf8"
-
-	"github.com/google/uuid"
 )
 
 const DefaultLimit = 20
@@ -104,8 +102,7 @@ func (uh *UserHandler) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 func (uh *UserHandler) FindUserHandler(w http.ResponseWriter, r *http.Request) {
 	var appErr apperrors.AppError
 	pathId := r.PathValue("id")
-	id, err := uuid.Parse(pathId)
-
+	id, err := strconv.Atoi(pathId)
 	if err != nil {
 		uh.SendError(w, apperrors.NewBadRequestError(err))
 		return
@@ -180,16 +177,11 @@ func (uh *UserHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request)
 	var appErr apperrors.AppError
 
 	pathId := r.PathValue("id")
-	id, err := uuid.Parse(pathId)
+	id, err := strconv.Atoi(pathId)
 	if err != nil {
-		uh.Logger.Info("failed to parse id",
-			"id", id,
-			"error", err)
 		uh.SendError(w, apperrors.NewBadRequestError(err))
 		return
 	}
-	uh.Logger.Info("id parsed",
-		"id", id)
 
 	var userUpdateRequest UserUpdateRequest
 	err = json.NewDecoder(r.Body).Decode(&userUpdateRequest)
@@ -236,7 +228,7 @@ func (uh *UserHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request)
 func (uh *UserHandler) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	var appErr apperrors.AppError
 	pathId := r.PathValue("id")
-	id, err := uuid.Parse(pathId)
+	id, err := strconv.Atoi(pathId)
 	if err != nil {
 		uh.SendError(w, apperrors.NewBadRequestError(err))
 		return

@@ -2,37 +2,24 @@ package user
 
 import (
 	"fmt"
-
-	"github.com/google/uuid"
 )
 
+const MinLimit = 1
+const MaxLimit = 100
+
 type User struct {
-	Id   uuid.UUID `json:"id"`
-	Name string    `json:"name"`
-	Age  int       `json:"age"`
+	Id   int    `json:"id"`
+	Name string `json:"name"`
+	Age  int    `json:"age"`
 }
 
-func NewUser(name string, age int) (User, error) {
-	id := uuid.New()
-	u := User{
-		Id:   id,
-		Name: name,
-	}
-	err := u.SetAge(age)
-	if err != nil {
-		return User{}, err
-	}
-
-	return u, nil
-}
-
-func (u User) AgeCategory() (string, error) {
+func (u *User) AgeCategory() (string, error) {
 	for c := range categories {
 		if categories[c].Contains(u.Age) {
 			return c, nil
 		}
 	}
-	return "", fmt.Errorf("Invalid age")
+	return "", fmt.Errorf("failed to get age category: Invalid age")
 }
 
 func (u *User) SetAge(age int) error {
