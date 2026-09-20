@@ -14,7 +14,6 @@ import (
 )
 
 const port = ":8081"
-const fileName = "data.json"
 
 func main() {
 	logger := slog.New(
@@ -41,20 +40,19 @@ func main() {
 	)
 	if err != nil {
 		logger.Error(err.Error())
+		panic(err)
 	}
 	defer db.Close()
 
 	if err := db.Ping(ctx); err != nil {
 		logger.Error(err.Error())
+		panic(err)
 	}
 
 	logger.Info("connected to postgres")
 
-	ur := repository.New(db, ctx, logger)
+	ur := repository.New(db, logger)
 	us := service.New(ur, logger)
-	if err != nil {
-		panic(err)
-	}
 	userHandler := transport.NewUserHandler(us, logger)
 
 	server := api.New(port, logger, userHandler)

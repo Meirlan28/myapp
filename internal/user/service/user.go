@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -18,12 +19,18 @@ func New(ur Repository, logger *slog.Logger) *UserService {
 	return &UserService{ur, logger}
 }
 
-func (us *UserService) Create(name string, age int) (user.User, apperrors.AppError) {
-	u, err := us.Ur.Create(name, age)
+func (us *UserService) Save(ctx context.Context, name string, age int) (*user.User, apperrors.AppError) {
+	u, err := user.New(name, age)
+	if err != nil {
+		return &user.User{}, apperrors.NewUserValidationError(err)
+	}
+	u, err = us.Ur.Save(ctx, u)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.DatabaseError):
 			return u, apperrors.NewDatabaseError(err)
+		case errors.Is(err, user.ErrEmptyName) || errors.Is(err, user.ErrInvalidName) || errors.Is(err, user.ErrInvalidAge):
+			return u, apperrors.NewUserValidationError(err)
 		default:
 			return u, apperrors.NewInternalServerError(err)
 		}
@@ -31,8 +38,8 @@ func (us *UserService) Create(name string, age int) (user.User, apperrors.AppErr
 	return u, nil
 }
 
-func (us *UserService) Delete(id int) apperrors.AppError {
-	err := us.Ur.DeleteByID(id)
+func (us *UserService) Delete(ctx context.Context, id int) apperrors.AppError {
+	err := us.Ur.DeleteByID(ctx, id)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.DatabaseError):
@@ -46,9 +53,9 @@ func (us *UserService) Delete(id int) apperrors.AppError {
 	return nil
 }
 
-func (us *UserService) FindById(id int) (user.User, apperrors.AppError) {
+func (us *UserService) FindById(ctx context.Context, id int) (*user.User, apperrors.AppError) {
 	us.logger.Info("finding user by id")
-	u, err := us.Ur.FindByID(id)
+	u, err := us.Ur.FindByID(ctx, id)
 	if err != nil {
 		us.logger.Error(err.Error())
 		switch {
@@ -63,7 +70,7 @@ func (us *UserService) FindById(id int) (user.User, apperrors.AppError) {
 	return u, nil
 }
 
-func (us *UserService) FindAll(minAge int, maxAge int, limit int, offset int) ([]user.User, apperrors.AppError) {
+func (us *UserService) FindAll(ctx context.Context, minAge int, maxAge int, limit int, offset int) ([]user.User, apperrors.AppError) {
 	if minAge < user.MinAge || user.MaxAge < minAge {
 		us.logger.Info("validation error for min_age",
 			"min_age", minAge)
@@ -82,9 +89,6 @@ func (us *UserService) FindAll(minAge int, maxAge int, limit int, offset int) ([
 		return nil, apperrors.NewBadRequestError(fmt.Errorf("invalid age range: %d-%d", minAge, maxAge))
 	}
 
-	us.logger.Info("validation finished",
-		"max_age", maxAge, "min_age", minAge)
-
 	if limit < user.MinLimit || user.MaxLimit < limit {
 		return nil, apperrors.NewBadRequestError(fmt.Errorf("invalid limit: %d", limit))
 	}
@@ -93,7 +97,10 @@ func (us *UserService) FindAll(minAge int, maxAge int, limit int, offset int) ([
 		return nil, apperrors.NewBadRequestError(fmt.Errorf("invalid offset: %d", offset))
 	}
 
-	users, err := us.Ur.FindAll(minAge, maxAge, limit, offset)
+	us.logger.Info("validation finished",
+		"max_age", maxAge, "min_age", minAge)
+
+	users, err := us.Ur.FindAll(ctx, minAge, maxAge, limit, offset)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.DatabaseError):
@@ -105,8 +112,12 @@ func (us *UserService) FindAll(minAge int, maxAge int, limit int, offset int) ([
 	return users, nil
 }
 
-func (us *UserService) Update(id int, name string, age int) (user.User, apperrors.AppError) {
-	u, err := us.Ur.Update(id, name, age)
+func (us *UserService) Update(ctx context.Context, id int, name string, age int) (*user.User, apperrors.AppError) {
+	u, err := user.New(name, age)
+	if err != nil {
+		return &user.User{}, apperrors.NewUserValidationError(err)
+	}
+	u, err = us.Ur.Update(ctx, id, u)
 	if err != nil {
 		us.logger.Error(err.Error())
 		switch {
@@ -114,6 +125,8 @@ func (us *UserService) Update(id int, name string, age int) (user.User, apperror
 			return u, apperrors.NewDatabaseError(err)
 		case errors.Is(err, repository.UserNotFound):
 			return u, apperrors.NewNotFoundError(err)
+		case errors.Is(err, user.ErrEmptyName) || errors.Is(err, user.ErrInvalidName) || errors.Is(err, user.ErrInvalidAge):
+			return u, apperrors.NewUserValidationError(err)
 		default:
 			return u, apperrors.NewInternalServerError(err)
 		}
@@ -121,8 +134,8 @@ func (us *UserService) Update(id int, name string, age int) (user.User, apperror
 	return u, nil
 }
 
-func (us *UserService) CountByAge(minAge int, MaxAge int) (int, apperrors.AppError) {
-	count, err := us.Ur.CountByAge(minAge, MaxAge)
+func (us *UserService) CountByAge(ctx context.Context, minAge int, MaxAge int) (int, apperrors.AppError) {
+	count, err := us.Ur.CountByAge(ctx, minAge, MaxAge)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.DatabaseError):

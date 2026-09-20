@@ -10,8 +10,6 @@ import (
 	"myapp/internal/user/service"
 	"net/http"
 	"strconv"
-	"strings"
-	"unicode/utf8"
 )
 
 const DefaultLimit = 20
@@ -60,6 +58,7 @@ func (uh *UserHandler) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+
 	offsetQuery := r.URL.Query().Get("offset")
 	offset, err := strconv.Atoi(offsetQuery)
 	if err != nil {
@@ -77,12 +76,12 @@ func (uh *UserHandler) GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 		"limit", limit,
 		"offset", offset)
 
-	users, appErr := uh.Us.FindAll(minAge, maxAge, limit, offset)
+	users, appErr := uh.Us.FindAll(r.Context(), minAge, maxAge, limit, offset)
 	if appErr != nil {
 		uh.SendError(w, appErr)
 		return
 	}
-	count, appErr := uh.Us.CountByAge(minAge, maxAge)
+	count, appErr := uh.Us.CountByAge(r.Context(), minAge, maxAge)
 	if appErr != nil {
 		uh.SendError(w, appErr)
 		return
@@ -108,7 +107,7 @@ func (uh *UserHandler) FindUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u, appErr := uh.Us.FindById(id)
+	u, appErr := uh.Us.FindById(r.Context(), id)
 	if appErr != nil {
 		uh.SendError(w, appErr)
 		return
@@ -147,24 +146,12 @@ func (uh *UserHandler) CreateUserHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	*userCreateRequest.Name = strings.TrimSpace(*userCreateRequest.Name)
-
-	if utf8.RuneCountInString(*userCreateRequest.Name) < 2 {
-		uh.SendError(w, apperrors.NewBadRequestError(err))
-		return
-	}
-
 	if userCreateRequest.Age == nil {
 		uh.SendError(w, apperrors.NewBadRequestError(InvalidAgeError))
 		return
 	}
 
-	if *userCreateRequest.Age < user.MinAge || user.MaxAge < *userCreateRequest.Age {
-		uh.SendError(w, apperrors.NewBadRequestError(InvalidAgeError))
-		return
-	}
-
-	u, appErr := uh.Us.Create(*userCreateRequest.Name, *userCreateRequest.Age)
+	u, appErr := uh.Us.Save(r.Context(), *userCreateRequest.Name, *userCreateRequest.Age)
 	if appErr != nil {
 		uh.SendError(w, appErr)
 		return
@@ -190,7 +177,7 @@ func (uh *UserHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	u, AppErr := uh.Us.FindById(id)
+	u, AppErr := uh.Us.FindById(r.Context(), id)
 	if AppErr != nil {
 		uh.SendError(w, AppErr)
 		return
@@ -204,19 +191,7 @@ func (uh *UserHandler) UpdateUserHandler(w http.ResponseWriter, r *http.Request)
 		userUpdateRequest.Age = &u.Age
 	}
 
-	*userUpdateRequest.Name = strings.TrimSpace(*userUpdateRequest.Name)
-
-	if utf8.RuneCountInString(*userUpdateRequest.Name) < 2 {
-		uh.SendError(w, apperrors.NewBadRequestError(InvalidAgeError))
-		return
-	}
-
-	if *userUpdateRequest.Age < user.MinAge || user.MaxAge < *userUpdateRequest.Age {
-		uh.SendError(w, apperrors.NewBadRequestError(InvalidAgeError))
-		return
-	}
-
-	u, appErr = uh.Us.Update(id, *userUpdateRequest.Name, *userUpdateRequest.Age)
+	u, appErr = uh.Us.Update(r.Context(), id, *userUpdateRequest.Name, *userUpdateRequest.Age)
 	if appErr != nil {
 		uh.SendError(w, appErr)
 		return
@@ -234,7 +209,7 @@ func (uh *UserHandler) DeleteUserHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	appErr = uh.Us.Delete(id)
+	appErr = uh.Us.Delete(r.Context(), id)
 	if appErr != nil {
 		uh.SendError(w, appErr)
 		return
