@@ -3,15 +3,18 @@ package apperrors
 import "net/http"
 
 type BadRequestError struct {
-	Code    int
-	Message string
-	Err     error
+	httpCode int
+	message  string
+	err      error
 }
 
-func (e *BadRequestError) Error() string { return e.Message }
-func (e *BadRequestError) Unwrap() error { return e.Err }
-func (e *BadRequestError) GetCode() int  { return e.Code }
+func (e *BadRequestError) Error() string   { return e.message }
+func (e *BadRequestError) Unwrap() error   { return e.err }
+func (e *BadRequestError) HTTPStatus() int { return e.httpCode }
+func (e *BadRequestError) Message() string {
+	return e.message
+}
 
-func NewBadRequestError(err error) *BadRequestError {
-	return &BadRequestError{Code: http.StatusBadRequest, Message: "Bad Request", Err: err}
+func NewBadRequestError(err error, mess string) *BadRequestError {
+	return &BadRequestError{httpCode: http.StatusBadRequest, message: mess, err: err}
 }

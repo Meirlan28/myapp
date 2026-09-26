@@ -1,7 +1,8 @@
 package apperrors
 
 type AppError interface {
-	Error() string
+	error
 	Unwrap() error
-	GetCode() int
+	HTTPStatus() int
+	Message() string
 }

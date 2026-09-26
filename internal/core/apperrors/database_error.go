@@ -3,15 +3,18 @@ package apperrors
 import "net/http"
 
 type DatabaseError struct {
-	Code    int
-	Message string
-	Err     error
+	httpCode int
+	message  string
+	err      error
 }
 
-func (e *DatabaseError) Error() string { return e.Message }
-func (e *DatabaseError) Unwrap() error { return e.Err }
-func (e *DatabaseError) GetCode() int  { return e.Code }
+func (e *DatabaseError) Error() string   { return e.message }
+func (e *DatabaseError) Unwrap() error   { return e.err }
+func (e *DatabaseError) HTTPStatus() int { return e.httpCode }
+func (e *DatabaseError) Message() string {
+	return e.message
+}
 
-func NewDatabaseError(err error) *DatabaseError {
-	return &DatabaseError{Code: http.StatusInternalServerError, Message: "Database error", Err: err}
+func NewDatabaseError(err error, mess string) *DatabaseError {
+	return &DatabaseError{httpCode: http.StatusInternalServerError, message: mess, err: err}
 }

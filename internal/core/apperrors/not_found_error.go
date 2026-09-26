@@ -3,15 +3,18 @@ package apperrors
 import "net/http"
 
 type NotFoundError struct {
-	Code    int
-	Message string
-	Err     error
+	httpCode int
+	message  string
+	err      error
 }
 
-func (e *NotFoundError) Error() string { return e.Message }
-func (e *NotFoundError) Unwrap() error { return e.Err }
-func (e *NotFoundError) GetCode() int  { return e.Code }
+func (e *NotFoundError) Error() string         { return e.message }
+func (e *InternalServerError) Unwrap() error   { return e.err }
+func (e *InternalServerError) HTTPStatus() int { return e.httpCode }
+func (e *InternalServerError) Message() string {
+	return e.message
+}
 
-func NewNotFoundError(err error) *NotFoundError {
-	return &NotFoundError{Code: http.StatusNotFound, Message: "Not Found Error", Err: err}
+func NewInternalServerError(err error, mess string) *InternalServerError {
+	return &InternalServerError{httpCode: http.StatusInternalServerError, message: mess, err: err}
 }
