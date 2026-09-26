@@ -16,5 +16,5 @@ func (e *NotFoundError) Message() string {
 }
 
 func NewNotFoundError(err error, mess string) *NotFoundError {
-	return &NotFoundError{httpCode: http.StatusInternalServerError, message: mess, err: err}
+	return &NotFoundError{httpCode: http.StatusNotFound, message: mess, err: err}
 }

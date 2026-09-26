@@ -18,7 +18,7 @@ func (us *UserService) FindById(ctx context.Context, id int) (*domain.User, appe
 		case errors.Is(err, repository.DatabaseError):
 			return u, apperrors.NewDatabaseError(err, err.Error())
 		case errors.Is(err, repository.UserNotFound):
-			return u, apperrors.NewInternalServerError(err, err.Error())
+			return u, apperrors.NewNotFoundError(err, err.Error())
 		default:
 			return u, apperrors.NewInternalServerError(err, err.Error())
 		}

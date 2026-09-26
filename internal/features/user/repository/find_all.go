@@ -7,7 +7,7 @@ import (
 )
 
 func (ur *UserRepository) FindAll(ctx context.Context, minAge *int, maxAge *int, limit *int, offset *int) ([]domain.User, error) {
-	ur.logger.Info("FindAll minmax age: ", "minAge", minAge, "maxAge", maxAge, " limit: ", limit, " offset: ", offset, "")
+	ur.logger.Info("FindAll", "min_age", minAge, "max_age", maxAge, "limit", limit, "offset", offset)
 	query := `
 	SELECT users.id, users.name, users.age 
 	FROM myapp.users 

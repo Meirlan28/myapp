@@ -15,7 +15,7 @@ func (us *UserService) CountByAge(ctx context.Context, minAge *int, MaxAge *int)
 		case errors.Is(err, repository.DatabaseError):
 			return 0, apperrors.NewDatabaseError(err, err.Error())
 		case errors.Is(err, repository.UserNotFound):
-			return 0, apperrors.NewInternalServerError(err, err.Error())
+			return 0, apperrors.NewNotFoundError(err, err.Error())
 		default:
 			return 0, apperrors.NewInternalServerError(err, err.Error())
 		}
