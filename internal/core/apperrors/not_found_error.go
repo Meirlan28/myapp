@@ -8,13 +8,13 @@ type NotFoundError struct {
 	err      error
 }
 
-func (e *NotFoundError) Error() string         { return e.message }
-func (e *InternalServerError) Unwrap() error   { return e.err }
-func (e *InternalServerError) HTTPStatus() int { return e.httpCode }
-func (e *InternalServerError) Message() string {
+func (e *NotFoundError) Error() string   { return e.message }
+func (e *NotFoundError) Unwrap() error   { return e.err }
+func (e *NotFoundError) HTTPStatus() int { return e.httpCode }
+func (e *NotFoundError) Message() string {
 	return e.message
 }
 
-func NewInternalServerError(err error, mess string) *InternalServerError {
-	return &InternalServerError{httpCode: http.StatusInternalServerError, message: mess, err: err}
+func NewNotFoundError(err error, mess string) *NotFoundError {
+	return &NotFoundError{httpCode: http.StatusInternalServerError, message: mess, err: err}
 }

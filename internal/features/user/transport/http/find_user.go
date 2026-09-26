@@ -19,7 +19,7 @@ func (uh *UserHTTPHandler) FindUser(w http.ResponseWriter, r *http.Request) {
 
 	u, appErr := uh.userService.FindById(r.Context(), id)
 	if appErr != nil {
-		responseHandler.ErrorResponse(apperrors.NewBadRequestError(err, "failed to find user:"))
+		responseHandler.ErrorResponse(appErr)
 		return
 	}
 

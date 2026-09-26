@@ -31,7 +31,10 @@ func (h *HTTPResponseHandler) JSONResponse(
 	h.rw.Header().Set("Content-Type", "application/json")
 
 	if err := json.NewEncoder(h.rw).Encode(responseBody); err != nil {
-		h.log.Error("write HTTP response", err)
+		h.log.Error(
+			"failed to encode response body",
+			"error", err,
+		)
 	}
 }
 
@@ -44,6 +47,6 @@ func (h *HTTPResponseHandler) ErrorResponse(err apperrors.AppError) {
 	h.rw.WriteHeader(err.HTTPStatus())
 
 	if err := json.NewEncoder(h.rw).Encode(ErrorResponse{err.Error(), err.Message()}); err != nil {
-		h.log.Error("write HTTP error response", err)
+		h.log.Error("write HTTP error response", "error", err)
 	}
 }

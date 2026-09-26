@@ -10,7 +10,7 @@ import (
 )
 
 type CreateUserRequest struct {
-	Name *string `json:"name" validate:"required",min=2,max=255`
+	Name *string `json:"name" validate:"required,min=2,max=255"`
 	Age  *int    `json:"age" validate:"required,gte=0,lte=120"`
 }
 
@@ -41,7 +41,7 @@ func (uh *UserHTTPHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	u, appErr := uh.userService.Save(r.Context(), *userCreateRequest.Name, *userCreateRequest.Age)
 	if appErr != nil {
-		responseHandler.ErrorResponse(apperrors.NewBadRequestError(err, "failed to create user:"))
+		responseHandler.ErrorResponse(appErr)
 		return
 	}
 

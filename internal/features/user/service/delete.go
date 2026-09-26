@@ -15,7 +15,7 @@ func (us *UserService) Delete(ctx context.Context, id int) apperrors.AppError {
 		case errors.Is(err, repository.DatabaseError):
 			return apperrors.NewDatabaseError(err, err.Error())
 		case errors.Is(err, repository.UserNotFound):
-			return apperrors.NewNotFoundError(err, err.Error())
+			return apperrors.NewInternalServerError(err, err.Error())
 		default:
 			return apperrors.NewInternalServerError(err, err.Error())
 		}

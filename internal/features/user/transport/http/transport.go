@@ -20,7 +20,7 @@ type UserService interface {
 	CountByAge(ctx context.Context, minAge *int, maxAge *int) (int, apperrors.AppError)
 	FindById(ctx context.Context, id int) (*domain.User, apperrors.AppError)
 	Save(ctx context.Context, name string, age int) (*domain.User, apperrors.AppError)
-	Update(ctx context.Context, id int, name string, age int) (*domain.User, apperrors.AppError)
+	Update(ctx context.Context, id int, userUpdate domain.UserUpdate) (*domain.User, apperrors.AppError)
 	Delete(ctx context.Context, id int) apperrors.AppError
 }
 
@@ -31,29 +31,29 @@ func NewUserHTTPHandler(us *service.UserService, logger *slog.Logger) *UserHTTPH
 func (h *UserHTTPHandler) Routes() []server.Route {
 	return []server.Route{
 		{
-			"POST",
-			"/users",
-			h.CreateUser,
+			Method:  "POST",
+			Path:    "/users",
+			Handler: h.CreateUser,
 		},
 		{
-			"DELETE",
-			"/users/{id}",
-			h.DeleteUser,
+			Method:  "DELETE",
+			Path:    "/users/{id}",
+			Handler: h.DeleteUser,
 		},
 		{
-			"GET",
-			"/users",
-			h.GetUsers,
+			Method:  "GET",
+			Path:    "/users",
+			Handler: h.GetUsers,
 		},
 		{
-			"GET",
-			"/users/{id}",
-			h.FindUser,
+			Method:  "GET",
+			Path:    "/users/{id}",
+			Handler: h.FindUser,
 		},
 		{
-			"PUT",
-			"/users/{id}",
-			h.UpdateUser,
+			Method:  "PUT",
+			Path:    "/users/{id}",
+			Handler: h.UpdateUser,
 		},
 	}
 }

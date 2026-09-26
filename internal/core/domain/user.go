@@ -29,7 +29,7 @@ func (u *User) AgeCategory() (string, error) {
 	return "", fmt.Errorf("failed to get age category: Invalid age")
 }
 
-func New(name string, age int) (*User, error) {
+func NewUser(name string, age int) (*User, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return nil, ErrEmptyName
@@ -45,4 +45,64 @@ func New(name string, age int) (*User, error) {
 		Name: name,
 		Age:  age,
 	}, nil
+}
+
+func (u *User) Validate() error {
+	if u.Name == "" {
+		return ErrEmptyName
+	}
+	if u.Age < MinAge || MaxAge < u.Age {
+		return ErrInvalidAge
+	}
+	return nil
+}
+
+type UserUpdate struct {
+	Name Nullable[string]
+	Age  Nullable[int]
+}
+
+func NewUserUpdate(
+	name Nullable[string],
+	age Nullable[int],
+) UserUpdate {
+	return UserUpdate{
+		Name: name,
+		Age:  age,
+	}
+}
+
+func (p *UserUpdate) Validate() error {
+	if p.Name.Set && p.Name.Value == nil {
+		return fmt.Errorf(
+			"`Name` can't be updated to NULL: %w",
+			fmt.Errorf("`Name` can't be updated to NULL"),
+		)
+	}
+
+	return nil
+}
+
+func (u *User) ApplyUpdate(patch UserUpdate) error {
+	if err := patch.Validate(); err != nil {
+		return fmt.Errorf("validate user patch: %w", err)
+	}
+
+	tmp := *u
+
+	if patch.Name.Set {
+		tmp.Name = *patch.Name.Value
+	}
+
+	if patch.Age.Set {
+		tmp.Age = *patch.Age.Value
+	}
+
+	if err := tmp.Validate(); err != nil {
+		return fmt.Errorf("validate patched user: %w", err)
+	}
+
+	*u = tmp
+
+	return nil
 }

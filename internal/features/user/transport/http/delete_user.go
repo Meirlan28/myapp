@@ -19,7 +19,7 @@ func (uh *UserHTTPHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	appErr = uh.userService.Delete(r.Context(), id)
 	if appErr != nil {
-		responseHandler.ErrorResponse(apperrors.NewBadRequestError(err, "failed to delete user:"))
+		responseHandler.ErrorResponse(appErr)
 		return
 	}
 	responseHandler.NoContentResponse()

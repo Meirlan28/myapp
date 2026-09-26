@@ -7,11 +7,12 @@ import (
 	domain "github.com/Meirlan28/myapp/internal/core/domain"
 	"github.com/Meirlan28/myapp/internal/core/transport/http/request"
 	"github.com/Meirlan28/myapp/internal/core/transport/http/response"
+	"github.com/Meirlan28/myapp/internal/core/transport/http/types"
 )
 
 type UpdateUserRequest struct {
-	Name *string `json:"name" min=2,max=255`
-	Age  *int    `json:"age" gte=0,lte=120`
+	Name types.Nullable[string] `json:"name"`
+	Age  types.Nullable[int]    `json:"age"`
 }
 
 type UpdateUserResponse struct {
@@ -33,6 +34,10 @@ func (uh *UserHTTPHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	var appErr apperrors.AppError
 
 	id, err := request.GetIntPathValue(r, "id")
+	if err != nil {
+		responseHandler.ErrorResponse(apperrors.NewBadRequestError(err, "failed to get id from path:"))
+		return
+	}
 
 	var userUpdateRequest UpdateUserRequest
 	err = request.DecodeAndValidateRequest(r, &userUpdateRequest)
@@ -41,17 +46,26 @@ func (uh *UserHTTPHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userUpdate := userPatchFromRequest(userUpdateRequest)
+
 	u, AppErr := uh.userService.FindById(r.Context(), id)
 	if AppErr != nil {
-		responseHandler.ErrorResponse(apperrors.NewBadRequestError(err, "failed to find user:"))
+		responseHandler.ErrorResponse(AppErr)
 		return
 	}
 
-	u, appErr = uh.userService.Update(r.Context(), id, *userUpdateRequest.Name, *userUpdateRequest.Age)
+	u, appErr = uh.userService.Update(r.Context(), id, userUpdate)
 	if appErr != nil {
-		responseHandler.ErrorResponse(apperrors.NewBadRequestError(err, "failed to update user:"))
+		responseHandler.ErrorResponse(appErr)
 		return
 	}
 
 	responseHandler.JSONResponse(ToUpdateUserResponse(u), http.StatusOK)
+}
+
+func userPatchFromRequest(request UpdateUserRequest) domain.UserUpdate {
+	return domain.NewUserUpdate(
+		request.Name.ToDomain(),
+		request.Age.ToDomain(),
+	)
 }

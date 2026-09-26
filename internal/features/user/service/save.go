@@ -10,7 +10,7 @@ import (
 )
 
 func (us *UserService) Save(ctx context.Context, name string, age int) (*domain.User, apperrors.AppError) {
-	u, err := domain.New(name, age)
+	u, err := domain.NewUser(name, age)
 	if err != nil {
 		return &domain.User{}, apperrors.NewUserValidationError(err, err.Error())
 	}

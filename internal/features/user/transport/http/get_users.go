@@ -38,12 +38,12 @@ func (uh *UserHTTPHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 
 	users, appErr := uh.userService.FindAll(r.Context(), minAge, maxAge, limit, offset)
 	if appErr != nil {
-		responseHandler.ErrorResponse(apperrors.NewBadRequestError(err, "failed to get users:"))
+		responseHandler.ErrorResponse(appErr)
 		return
 	}
 	count, appErr := uh.userService.CountByAge(r.Context(), minAge, maxAge)
 	if appErr != nil {
-		responseHandler.ErrorResponse(apperrors.NewBadRequestError(err, "failed to get users:"))
+		responseHandler.ErrorResponse(appErr)
 		return
 	}
 
