@@ -1,6 +1,10 @@
 package server
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/Meirlan28/myapp/internal/core/transport/http/middleware"
+)
 
 type APIVersion string
 
@@ -14,14 +18,17 @@ type APIVersionRouter struct {
 	*http.ServeMux
 	apiVersion APIVersion
 	routes     []Route
+	middleware []middleware.Middleware
 }
 
 func NewAPIVersionRouter(
 	apiVersion APIVersion,
+	middleware ...middleware.Middleware,
 ) *APIVersionRouter {
 	return &APIVersionRouter{
 		ServeMux:   http.NewServeMux(),
 		apiVersion: apiVersion,
+		middleware: middleware,
 	}
 }
 
@@ -33,9 +40,11 @@ func (r *APIVersionRouter) Handlers() map[string]http.Handler {
 	handlers := make(map[string]http.Handler, len(r.routes))
 
 	for _, route := range r.routes {
-		// Формируем полный паттерн: "GET /api/v1/tasks", "POST /api/v1/users" и т.д.
 		pattern := route.Method + " /api/" + string(r.apiVersion) + route.Path
-		handler := route.Handler
+		handler := middleware.ChainMiddleware(
+			route.WithMiddleware(),
+			r.middleware...,
+		)
 
 		handlers[pattern] = handler
 	}

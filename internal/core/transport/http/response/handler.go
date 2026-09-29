@@ -2,13 +2,15 @@ package response
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 
-	"github.com/Meirlan28/myapp/internal/core/apperrors"
+	"github.com/Meirlan28/myapp/internal/core/errs"
 )
 
-type HTTPResponseHandler struct {
+type ResponseHandler struct {
 	log *slog.Logger
 	rw  http.ResponseWriter
 }
@@ -16,14 +18,14 @@ type HTTPResponseHandler struct {
 func NewHTTPResponseHandler(
 	log *slog.Logger,
 	rw http.ResponseWriter,
-) *HTTPResponseHandler {
-	return &HTTPResponseHandler{
+) *ResponseHandler {
+	return &ResponseHandler{
 		log: log,
 		rw:  rw,
 	}
 }
 
-func (h *HTTPResponseHandler) JSONResponse(
+func (h *ResponseHandler) JSONResponse(
 	responseBody any,
 	statusCode int,
 ) {
@@ -38,15 +40,32 @@ func (h *HTTPResponseHandler) JSONResponse(
 	}
 }
 
-func (h *HTTPResponseHandler) NoContentResponse() {
+func (h *ResponseHandler) NoContentResponse() {
 	h.rw.WriteHeader(http.StatusNoContent)
 }
 
-func (h *HTTPResponseHandler) ErrorResponse(err apperrors.AppError) {
-	h.rw.Header().Set("Content-Type", "application/json")
-	h.rw.WriteHeader(err.HTTPStatus())
+func (h *ResponseHandler) ErrorResponse(err error) {
+	var appErr *errs.Error
+	if !errors.As(err, &appErr) {
+		appErr = errs.Internal("internal error", err)
+	}
 
-	if err := json.NewEncoder(h.rw).Encode(ErrorResponse{err.Error(), err.Message()}); err != nil {
+	h.rw.Header().Set("Content-Type", "application/json")
+	h.rw.WriteHeader(httpStatus(appErr.Code))
+
+	if err := json.NewEncoder(h.rw).Encode(ErrorResponse{
+		Code:    appErr.Code,
+		Message: appErr.Message,
+	}); err != nil {
 		h.log.Error("write HTTP error response", "error", err)
 	}
+}
+
+func (h *ResponseHandler) PanicResponse(p any, msg string) {
+	err := errs.Internal("internal error", fmt.Errorf("%v", p))
+	h.log.Error(msg, "error", err)
+
+	h.ErrorResponse(
+		errs.Internal("internal error", err),
+	)
 }

@@ -1,8 +1,15 @@
 package logger
 
 import (
+	"context"
 	"log/slog"
 	"os"
+)
+
+type loggerContextKey struct{}
+
+var (
+	key = loggerContextKey{}
 )
 
 func New(cfg Config) *slog.Logger {
@@ -26,4 +33,21 @@ func New(cfg Config) *slog.Logger {
 	)
 
 	return slog.New(handler)
+}
+
+func ToContext(ctx context.Context, logger *slog.Logger) context.Context {
+	return context.WithValue(
+		ctx,
+		key,
+		logger,
+	)
+}
+
+func FromContext(ctx context.Context) *slog.Logger {
+	log, ok := ctx.Value(key).(*slog.Logger)
+	if !ok {
+		panic("no logger in context")
+	}
+
+	return log
 }

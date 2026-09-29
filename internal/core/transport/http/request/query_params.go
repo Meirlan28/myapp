@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func GetIntQueryParam(r *http.Request, key string) (*int, error) {
+func IntQueryParam(r *http.Request, key string) (*int, error) {
 	param := r.URL.Query().Get(key)
 	if param == "" {
 		return nil, nil

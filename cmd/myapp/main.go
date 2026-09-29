@@ -6,15 +6,14 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
-	coreDB "github.com/Meirlan28/myapp/internal/core/database"
-	coreLogger "github.com/Meirlan28/myapp/internal/core/logger"
-	coreHTTPServer "github.com/Meirlan28/myapp/internal/core/transport/http/server"
-	coreHttpServer "github.com/Meirlan28/myapp/internal/core/transport/http/server"
-	userRepository "github.com/Meirlan28/myapp/internal/features/user/repository"
-	userService "github.com/Meirlan28/myapp/internal/features/user/service"
-	userTransportHTTP "github.com/Meirlan28/myapp/internal/features/user/transport/http"
+	"github.com/Meirlan28/myapp/internal/core/logger"
+	"github.com/Meirlan28/myapp/internal/core/postgres"
+	"github.com/Meirlan28/myapp/internal/core/transport/http/middleware"
+	"github.com/Meirlan28/myapp/internal/core/transport/http/server"
+	"github.com/Meirlan28/myapp/internal/features/user/repository"
+	"github.com/Meirlan28/myapp/internal/features/user/service"
+	"github.com/Meirlan28/myapp/internal/features/user/transport/userhttp"
 	"github.com/joho/godotenv"
 )
 
@@ -26,11 +25,11 @@ func main() {
 	}
 
 	// creating logger
-	loggerConfig, err := coreLogger.LoadConfig()
+	loggerConfig, err := logger.LoadConfig()
 	if err != nil {
 		panic(err)
 	}
-	logger := coreLogger.New(loggerConfig)
+	logger := logger.New(loggerConfig)
 
 	// creating context with gracefull shutdown
 	ctx, stop := signal.NotifyContext(
@@ -42,14 +41,14 @@ func main() {
 	defer stop()
 
 	// loading postgres config
-	postgresConfig, err := coreDB.LoadConfig()
+	postgresConfig, err := postgres.LoadConfig()
 	if err != nil {
 		logger.Error(err.Error())
 		panic(err)
 	}
 
 	// connecting to postgres
-	db, err := coreDB.NewPostgres(ctx, postgresConfig)
+	db, err := postgres.New(ctx, postgresConfig)
 	if err != nil {
 		logger.Error(err.Error())
 		panic(err)
@@ -57,30 +56,23 @@ func main() {
 	defer db.Close()
 	logger.Info("connected to postgres")
 
-	serverConfig, err := coreHTTPServer.LoadConfig()
-	httpServer := coreHTTPServer.New(serverConfig, logger)
+	serverConfig, err := server.LoadConfig()
+	httpServer := server.New(serverConfig, logger,
+		middleware.CORS(serverConfig.AllowedOrigins),
+		middleware.RequestID(),
+		middleware.Logger(logger),
+		middleware.Trace(),
+		middleware.Recovery())
 
-	ur := userRepository.New(db, logger)
-	us := userService.New(ur, logger)
-	userTransportHTTP := userTransportHTTP.NewUserHTTPHandler(us, logger)
+	ur := repository.New(db, logger)
+	us := service.New(ur, logger)
+	userTransportHTTP := userhttp.NewHTTPHandler(us, logger)
 
-	apiVersionRouterV1 := coreHttpServer.NewAPIVersionRouter(coreHttpServer.ApiVersion1)
+	apiVersionRouterV1 := server.NewAPIVersionRouter(server.ApiVersion1)
 	apiVersionRouterV1.AddRoutes(userTransportHTTP.Routes()...)
 
 	httpServer.RegisterAPIRouters(apiVersionRouterV1)
-	go httpServer.Start()
-
-	<-ctx.Done()
-	logger.Info("shutting down httpServer")
-
-	shutdownCtx, cancel := context.WithTimeout(
-		context.Background(),
-		10*time.Second,
-	)
-	defer cancel()
-
-	err = httpServer.Stop(shutdownCtx)
-	if err != nil {
-		panic(err)
+	if err := httpServer.Start(ctx); err != nil {
+		logger.Error("HTTP server run error", "error", err)
 	}
 }
